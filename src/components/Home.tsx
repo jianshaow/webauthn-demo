@@ -1,6 +1,6 @@
 import { Component, ChangeEvent, FormEvent } from 'react';
 import './Home.css'
-import * as cbor from 'cbor-web'
+import * as cbor from 'cbor-x'
 
 interface HomeState {
   loggedIn: boolean;
@@ -95,7 +95,7 @@ class Home extends Component<{}, HomeState> {
       console.log('actualChallenge=%s', clientDataObj.challenge);
       console.log('expectedChallenge=%s', this.bufferToBase64URLString(challenge.buffer))
 
-      const attestationObj = cbor.decode(attestationObject);
+      const attestationObj = cbor.decode(new Uint8Array(attestationObject));
       console.log('attestation=%o', attestationObj)
 
       // save credential in state
