@@ -3,8 +3,16 @@
 ##
 ~~~ shell
 npm install
+# start locally
+npm run start
+# build
 npm run build
-export image_ver=0.0.1
+# install serve
+npm install -g serve
+# run with serve
+serve -s build
+# build and run with docker
+export image_ver=0.1.0
 docker build -t jianshao/webauthn-demo:$image_ver .
 docker push jianshao/webauthn-demo:$image_ver
 docker run -d --name webauthn-demo --rm -p 80:80 jianshao/webauthn-demo:$image_ver

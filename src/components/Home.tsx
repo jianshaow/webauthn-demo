@@ -72,7 +72,7 @@ class Home extends Component<{}, HomeState> {
           },
           challenge: challenge,
           pubKeyCredParams: [
-            { type: 'public-key', alg: -257 },
+            { type: 'public-key', alg: -257 }, { type: 'public-key', alg: -7 }
           ],
           authenticatorSelection: {
             authenticatorAttachment: 'platform',
