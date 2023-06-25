@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webauthn-demo
+  namespace: demo
+spec:
+  selector:
+    matchLabels:
+      app: webauthn-demo
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: webauthn-demo
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: main
+        image: jianshao/webauthn-demo:0.0.1
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+          requests:
+            cpu: 10m
+            memory: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webauthn-demo
+  labels:
+    app: webauthn-demo
+  namespace: demo
+spec:
+  ports:
+  - name: http
+    port: 80
+  selector:
+    app: webauthn-demo
