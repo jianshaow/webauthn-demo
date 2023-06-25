@@ -57,7 +57,7 @@ class Home extends Component<{}, HomeState> {
     e.preventDefault();
     const { username } = this.state;
     const challenge = new Uint8Array(32);
-    window.crypto.getRandomValues(challenge);
+    crypto.getRandomValues(challenge);
 
     try {
       const createCredentialOptions: CredentialCreationOptions = {
@@ -113,7 +113,7 @@ class Home extends Component<{}, HomeState> {
     e.preventDefault();
     const { username, credential } = this.state;
     const challenge = new Uint8Array(32);
-    window.crypto.getRandomValues(challenge);
+    crypto.getRandomValues(challenge);
 
     console.log('credentialId=%s', credential?.id)
 
@@ -170,7 +170,7 @@ class Home extends Component<{}, HomeState> {
       );
 
       // verify signature
-      const result = await window.crypto.subtle.verify(
+      const result = await crypto.subtle.verify(
         {
           name: 'RSASSA-PKCS1-v1_5',
           hash: { name: 'SHA-256' },
