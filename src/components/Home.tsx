@@ -106,7 +106,7 @@ class Home extends Component<{}, HomeState> {
       alert('Register fail');
     }
 
-    this.setState({ username: '' });
+    this.setState({ username: 'admin' });
   };
 
   handleLogin = async (e: FormEvent) => {
@@ -125,7 +125,7 @@ class Home extends Component<{}, HomeState> {
             {
               type: 'public-key',
               id: credential?.rawId as BufferSource,
-              transports: ['internal']
+              transports: ['internal', 'ble', 'nfc', 'usb', 'hybrid']
             },
           ],
           userVerification: 'preferred',
@@ -191,7 +191,7 @@ class Home extends Component<{}, HomeState> {
       alert('Login fail');
     }
 
-    this.setState({ username: '' });
+    this.setState({ username: 'admin' });
   };
 
   render() {
