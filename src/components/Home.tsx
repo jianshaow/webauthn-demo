@@ -1,4 +1,4 @@
-import { Component, ChangeEvent, FormEvent } from 'react';
+import React, { Component, ChangeEvent, FormEvent } from 'react';
 import './Home.css'
 import * as cbor from 'cbor-x'
 
@@ -263,11 +263,20 @@ interface LogViewerState {
 }
 
 class LogViewer extends Component<LogViewerState> {
+  logRef = React.createRef<HTMLTextAreaElement>();
+
+  componentDidUpdate() {
+    const { current } = this.logRef;
+    if (current) {
+      current.scrollTop = current.scrollHeight;
+    }
+  }
+
   render() {
     const { log } = this.props;
 
     return (
-      <textarea value={log} readOnly rows={10} style={{ width: '80%', height: '200px' }} />
+      <textarea ref={this.logRef} value={log} readOnly rows={10} style={{ width: '80%', height: '200px' }} />
     );
   }
 }
