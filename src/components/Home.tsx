@@ -3,6 +3,7 @@ import './Home.css'
 import * as cbor from 'cbor-x'
 
 interface HomeState {
+  log: string;
   loggedIn: boolean;
   username: string;
   credential: PublicKeyCredential | null;
@@ -14,6 +15,7 @@ class Home extends Component<{}, HomeState> {
   constructor(props: {}) {
     super(props);
     this.state = {
+      log: '',
       loggedIn: false,
       username: 'admin',
       credential: null,
@@ -21,6 +23,17 @@ class Home extends Component<{}, HomeState> {
       loginEnabled: false,
     };
   }
+
+  appendToLog(message: string) {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const milliseconds = now.getMilliseconds().toString().padStart(3, '0');
+    const timestamp = `${hours}:${minutes}:${seconds}.${milliseconds}`;
+    const logEntry = `[${timestamp}] ${message}`;
+    this.setState(prevState => ({ log: prevState.log + logEntry + '\n' }));
+  };
 
   bufferToBase64URLString(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);
@@ -56,14 +69,16 @@ class Home extends Component<{}, HomeState> {
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     const { username } = this.state;
-    const challenge = new Uint8Array(32);
-    crypto.getRandomValues(challenge);
 
     try {
+      this.appendToLog('Start register...')
+      this.appendToLog('username=' + username)
+      const challenge = new Uint8Array(32);
+      crypto.getRandomValues(challenge);
       const createCredentialOptions: CredentialCreationOptions = {
         publicKey: {
           rp: {
-            name: 'Admin Console',
+            name: 'AA Server',
           },
           user: {
             id: new Uint8Array([79, 252, 83, 72, 214, 7, 89, 26]),
@@ -83,7 +98,7 @@ class Home extends Component<{}, HomeState> {
       };
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
-      console.log('credentialId=%s', credential.id);
+      this.appendToLog('credentialId=' + credential.id);
 
       const { clientDataJSON, attestationObject } = credential.response as AuthenticatorAttestationResponse;
 
@@ -92,18 +107,19 @@ class Home extends Component<{}, HomeState> {
       const decodedClientData = decoder.decode(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
       console.log('clientData=%o', clientDataObj);
-      console.log('actualChallenge=%s', clientDataObj.challenge);
-      console.log('expectedChallenge=%s', this.bufferToBase64URLString(challenge.buffer))
+      this.appendToLog('actualChallenge=' + clientDataObj.challenge);
+      this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer))
 
       const attestationObj = cbor.decode(new Uint8Array(attestationObject));
       console.log('attestation=%o', attestationObj)
 
       // save credential in state
       this.setState({ registerEnabled: false, loginEnabled: true, credential: credential });
-      alert('Register success');
+      this.appendToLog('Register success');
     } catch (error) {
       console.error(error);
       alert('Register fail');
+      this.appendToLog('Error=' + error);
     }
 
     this.setState({ username: 'admin' });
@@ -112,12 +128,14 @@ class Home extends Component<{}, HomeState> {
   handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     const { username, credential } = this.state;
-    const challenge = new Uint8Array(32);
-    crypto.getRandomValues(challenge);
 
-    console.log('credentialId=%s', credential?.id)
-
+    
     try {
+      this.appendToLog('Start login...')
+      this.appendToLog('username=' + username)
+      this.appendToLog('credentialId=' + credential?.id)
+      const challenge = new Uint8Array(32);
+      crypto.getRandomValues(challenge);
       const getCredentialOptions: CredentialRequestOptions = {
         publicKey: {
           challenge: challenge,
@@ -140,8 +158,8 @@ class Home extends Component<{}, HomeState> {
       const decoder = new TextDecoder('utf-8');
       const decodedClientData = decoder.decode(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
-      console.log('actualChallenge=%s', clientDataObj.challenge);
-      console.log('expectedChallenge=%s', this.bufferToBase64URLString(challenge.buffer))
+      this.appendToLog('actualChallenge=' + clientDataObj.challenge);
+      this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer))
 
       const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON)
       const signatureBase = this.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
@@ -185,24 +203,25 @@ class Home extends Component<{}, HomeState> {
       }
 
       this.setState({ loggedIn: true });
-      alert('Login success');
+      this.appendToLog('Login success');
     } catch (error) {
       console.error(error);
       alert('Login fail');
+      this.appendToLog('Error=' + error);
     }
 
     this.setState({ username: 'admin' });
   };
 
   render() {
-    const { loggedIn, username, registerEnabled, loginEnabled } = this.state;
+    const { loggedIn, username, registerEnabled, loginEnabled, log } = this.state;
 
     return (
       <div className="container">
         <div className="center">
           {loggedIn ? (
             <div>
-              <h1>Wellcome！</h1>
+              <h1>Wellcome, { username }！</h1>
               <button onClick={() => this.setState({ loggedIn: false })}>退出登录</button>
             </div>
           ) : (
@@ -230,7 +249,25 @@ class Home extends Component<{}, HomeState> {
             </div>
           )}
         </div>
+        <div className="divider" />
+        <div className="center">
+          <LogViewer log={log} />
+        </div>
       </div>
+    );
+  }
+}
+
+interface LogViewerState {
+  log: string;
+}
+
+class LogViewer extends Component<LogViewerState> {
+  render() {
+    const { log } = this.props;
+
+    return (
+      <textarea value={log} readOnly rows={10} style={{ width: '80%', height: '200px' }} />
     );
   }
 }
