@@ -100,8 +100,7 @@ class Home extends Component<{}, HomeState> {
             authenticatorAttachment: 'platform',
             userVerification: 'preferred',
           },
-          // attestation: 'direct',
-          attestation: 'none',
+          attestation: 'direct',
         },
       };
 
@@ -177,18 +176,29 @@ class Home extends Component<{}, HomeState> {
       const clientDataObj = JSON.parse(decodedClientData);
       console.log('clientData=%o', clientDataObj);
       this.appendToLog('actualChallenge=' + clientDataObj.challenge);
-      this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer))
+      this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer));
 
-      const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON)
+      const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
       const signatureBase = this.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
 
       // retrieve public key from attestation that returned from registering before
       if (!credential) {
-        throw new Error('No credential, register first')
+        throw new Error('No credential, register first');
       }
 
       const attestationResponse = credential.response as AuthenticatorAttestationResponse;
       const publicKeyDer = attestationResponse.getPublicKey();
+      const algorithm = attestationResponse.getPublicKeyAlgorithm();
+
+      const getAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
+        if (algorithm === -7) {
+          return { name: 'ECDSA', namedCurve: 'P-256' };
+        } else if (algorithm === -257) {
+          return { name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" } };
+        } else {
+          return 'ECDSA';
+        }
+      }
 
       if (!publicKeyDer) {
         throw new Error('No public key');
@@ -198,20 +208,14 @@ class Home extends Component<{}, HomeState> {
       const publicKey = await crypto.subtle.importKey(
         "spki",
         publicKeyDer,
-        {
-          name: "RSASSA-PKCS1-v1_5",
-          hash: { name: "SHA-256" },
-        },
+        getAlgorithm(algorithm),
         true,
         ["verify"]
       );
 
       // verify signature
       const result = await crypto.subtle.verify(
-        {
-          name: 'RSASSA-PKCS1-v1_5',
-          hash: { name: 'SHA-256' },
-        },
+        getAlgorithm(algorithm),
         publicKey,
         signature,
         signatureBase
