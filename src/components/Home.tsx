@@ -5,6 +5,7 @@ import * as cbor from 'cbor-x'
 interface HomeState {
   log: string;
   loggedIn: boolean;
+  userId: string;
   username: string;
   credential: PublicKeyCredential | null;
   registerEnabled: boolean;
@@ -17,6 +18,7 @@ class Home extends Component<{}, HomeState> {
     this.state = {
       log: '',
       loggedIn: false,
+      userId: '14562550-a677-4832-9add-77527ae332db',
       username: 'admin',
       credential: null,
       registerEnabled: false,
@@ -34,6 +36,10 @@ class Home extends Component<{}, HomeState> {
     const logEntry = `[${timestamp}] ${message}`;
     this.setState(prevState => ({ log: prevState.log + logEntry + '\n' }));
   };
+
+  bufferToUTF8String(value: ArrayBuffer): string {
+    return new TextDecoder('utf-8').decode(value);
+  }
 
   bufferToBase64URLString(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);
@@ -68,11 +74,12 @@ class Home extends Component<{}, HomeState> {
 
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const { username } = this.state;
+    const { username, userId } = this.state;
 
     try {
       this.appendToLog('Start register...')
       this.appendToLog('username=' + username)
+      this.appendToLog('userId=' + userId);
       const challenge = new Uint8Array(32);
       crypto.getRandomValues(challenge);
       const createCredentialOptions: CredentialCreationOptions = {
@@ -81,7 +88,7 @@ class Home extends Component<{}, HomeState> {
             name: 'AA Server',
           },
           user: {
-            id: new Uint8Array([79, 252, 83, 72, 214, 7, 89, 26]),
+            id: new TextEncoder().encode(userId),
             name: username,
             displayName: username,
           },
@@ -93,25 +100,32 @@ class Home extends Component<{}, HomeState> {
             authenticatorAttachment: 'platform',
             userVerification: 'preferred',
           },
-          attestation: 'direct',
+          // attestation: 'direct',
+          attestation: 'none',
         },
       };
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
-      this.appendToLog('credentialId=' + credential.id);
+      this.appendToLog('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
+      this.appendToLog('credential.id=' + credential.id);
+      this.appendToLog('credential.type=' + credential.type);
 
-      const { clientDataJSON, attestationObject } = credential.response as AuthenticatorAttestationResponse;
+      const attestationResponse = credential.response as AuthenticatorAttestationResponse;
+      this.appendToLog('attestation.publicKeyAlgorithm=' + attestationResponse.getPublicKeyAlgorithm());
+      this.appendToLog('attestation.transports=' + attestationResponse.getTransports());
+
+      const { clientDataJSON, attestationObject } = attestationResponse;
 
       // verify challenge
-      const decoder = new TextDecoder('utf-8');
-      const decodedClientData = decoder.decode(clientDataJSON);
+      const decodedClientData = this.bufferToUTF8String(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
       console.log('clientData=%o', clientDataObj);
       this.appendToLog('actualChallenge=' + clientDataObj.challenge);
-      this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer))
+      this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer));
 
       const attestationObj = cbor.decode(new Uint8Array(attestationObject));
-      console.log('attestation=%o', attestationObj)
+      console.log('attestation=%o', attestationObj);
+      this.appendToLog('attestationObject.fmt=' + attestationObj.fmt);
 
       // save credential in state
       this.setState({ registerEnabled: false, loginEnabled: true, credential: credential });
@@ -129,11 +143,10 @@ class Home extends Component<{}, HomeState> {
     e.preventDefault();
     const { username, credential } = this.state;
 
-    
     try {
       this.appendToLog('Start login...')
       this.appendToLog('username=' + username)
-      this.appendToLog('credentialId=' + credential?.id)
+      this.appendToLog('credential.id=' + credential?.id)
       const challenge = new Uint8Array(32);
       crypto.getRandomValues(challenge);
       const getCredentialOptions: CredentialRequestOptions = {
@@ -150,13 +163,17 @@ class Home extends Component<{}, HomeState> {
         },
       };
 
-
       const assertion = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
-      const { authenticatorData, signature, clientDataJSON } = assertion.response as AuthenticatorAssertionResponse;
+      this.appendToLog('assertion.id=' + assertion.id);
+      this.appendToLog('assertion.type=' + assertion.type);
+
+      const { authenticatorData, signature, clientDataJSON, userHandle } = assertion.response as AuthenticatorAssertionResponse;
+      if (userHandle) {
+        this.appendToLog('userHandle=' + this.bufferToUTF8String(userHandle));
+      }
 
       // verify challenge
-      const decoder = new TextDecoder('utf-8');
-      const decodedClientData = decoder.decode(clientDataJSON);
+      const decodedClientData = this.bufferToUTF8String(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
       this.appendToLog('actualChallenge=' + clientDataObj.challenge);
       this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer))
@@ -173,9 +190,10 @@ class Home extends Component<{}, HomeState> {
       const publicKeyDer = attestationResponse.getPublicKey();
 
       if (!publicKeyDer) {
-        throw new Error('No public key')
+        throw new Error('No public key');
       }
 
+      // prepare public key
       const publicKey = await crypto.subtle.importKey(
         "spki",
         publicKeyDer,
@@ -221,7 +239,7 @@ class Home extends Component<{}, HomeState> {
         <div className="center">
           {loggedIn ? (
             <div>
-              <h1>Wellcome, { username }！</h1>
+              <h1>Wellcome, {username}！</h1>
               <button onClick={() => this.setState({ loggedIn: false })}>退出登录</button>
             </div>
           ) : (
