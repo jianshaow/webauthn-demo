@@ -106,9 +106,9 @@ class Home extends Component<{}, HomeState> {
       };
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
-      this.appendToLog('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
       this.appendToLog('credential.id=' + credential.id);
       this.appendToLog('credential.type=' + credential.type);
+      this.appendToLog('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
 
       const attestationResponse = credential.response as AuthenticatorAttestationResponse;
       this.appendToLog('attestation.publicKeyAlgorithm=' + attestationResponse.getPublicKeyAlgorithm());
@@ -152,13 +152,13 @@ class Home extends Component<{}, HomeState> {
       const getCredentialOptions: CredentialRequestOptions = {
         publicKey: {
           challenge: challenge,
-          allowCredentials: [
-            {
-              type: 'public-key',
-              id: credential?.rawId as BufferSource,
-              transports: ['internal', 'ble', 'nfc', 'usb', 'hybrid']
-            },
-          ],
+          // allowCredentials: [
+          //   {
+          //     type: 'public-key',
+          //     id: credential?.rawId as BufferSource,
+          //     transports: ['internal', 'ble', 'nfc', 'usb', 'hybrid']
+          //   },
+          // ],
           userVerification: 'preferred',
         },
       };
@@ -175,6 +175,7 @@ class Home extends Component<{}, HomeState> {
       // verify challenge
       const decodedClientData = this.bufferToUTF8String(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
+      console.log('clientData=%o', clientDataObj);
       this.appendToLog('actualChallenge=' + clientDataObj.challenge);
       this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer))
 
