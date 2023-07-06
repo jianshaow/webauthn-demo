@@ -11,7 +11,6 @@ interface HomeState {
   storedCredentials: Credential[];
   displayName: string;
   rpId: string;
-  registerEnabled: boolean;
 }
 
 interface Credential {
@@ -40,9 +39,8 @@ class Home extends Component<{}, HomeState> {
       username: 'John.Smith@TechGenius.com',
       allowCredentials: [],
       storedCredentials: credentials,
-      rpId: window.location.host,
+      rpId: window.location.host.split(':')[0],
       displayName: 'John Smith',
-      registerEnabled: false,
     };
   }
 
@@ -122,7 +120,7 @@ class Home extends Component<{}, HomeState> {
 
   isSelected = (credentialId: string) => {
     const { allowCredentials } = this.state;
-    return allowCredentials.some((selectedCredential) => new TextDecoder().decode(selectedCredential.id) === credentialId);
+    return allowCredentials.some((selectedCredential) => this.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId);
   };
 
   deleteCredential = (e: MouseEvent<HTMLButtonElement>) => {
@@ -150,7 +148,7 @@ class Home extends Component<{}, HomeState> {
     if (e.target.checked) {
       const allowCredential: PublicKeyCredentialDescriptor = {
         type: 'public-key',
-        id: this.stringToBuffer(e.target.value),
+        id: this.base64URLStringToBuffer(e.target.value),
         transports: ['internal']
       }
       allowCredentials.push(allowCredential);
@@ -163,7 +161,7 @@ class Home extends Component<{}, HomeState> {
 
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, userId, rpId, storedCredentials } = this.state;
+    const { username, displayName, userId, rpId, storedCredentials } = this.state;
 
     try {
       this.appendToLog('Start register...')
@@ -222,14 +220,12 @@ class Home extends Component<{}, HomeState> {
       console.log('attestation=%o', attestationObj);
       this.appendToLog('attestationObject.fmt=' + attestationObj.fmt);
 
-      // save credential in state
-      this.setState({ registerEnabled: false });
-
+      // save credential in state and local storage
       storedCredentials.push({
         id: credential.id,
         userId: userId,
         username: username,
-        displayName: '',
+        displayName: displayName,
         publicKey: this.bufferToBase64URLString(pubclicKeyDer),
         publicKeyAlgorithm: attestationResponse.getPublicKeyAlgorithm()
       });
@@ -242,7 +238,7 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('Error=' + error);
     }
 
-    this.setState({ username: 'John.Smith@TechGenius.com' });
+    this.setState({ username: 'John.Smith@TechGenius.com', storedCredentials: storedCredentials });
   };
 
   handleLogin = async (e: FormEvent) => {
@@ -358,7 +354,7 @@ class Home extends Component<{}, HomeState> {
   };
 
   render() {
-    const { loggedIn, userId, username, storedCredentials, displayName, rpId, registerEnabled, log } = this.state;
+    const { loggedIn, userId, username, storedCredentials, displayName, rpId, log } = this.state;
     return (
       <div className="container">
         <div className="center">
@@ -372,7 +368,7 @@ class Home extends Component<{}, HomeState> {
               <h1>Login</h1>
               <form onSubmit={this.handleLogin}>
                 <label>storedCredentials:</label>
-                <div className='frame'>
+                <div className='table-container'>
                   <table>
                     <thead>
                       <tr>
@@ -402,36 +398,30 @@ class Home extends Component<{}, HomeState> {
                   <label> Username: </label>
                   <input type="text" value={username} onChange={this.handleUsernameChange} />
                 </div>
-                {registerEnabled ? (
-                  <button type="submit">Register Passkey</button>
-                ) : (
-                  <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
-                )}
+                <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
               </form>
-              {registerEnabled ? null : (
-                <div>
-                  <br />
-                  <label>No Passkey?</label>
-                  <form onSubmit={this.handleRegister}>
-                    <div>
-                      <label> UserId: </label>
-                      <input type="text" value={userId} readOnly style={{ width: '260px' }} />
-                      <button onClick={this.regenUserId}>Regen</button>
-                    </div>
-                    <div>
-                      <label> DisplayName: </label>
-                      <input type="text" value={displayName} readOnly style={{ width: '260px' }} />
-                    </div>
-                    <div>
-                      <label>RPId: </label>
-                      <input type="text" value={rpId} onChange={this.handleRpId} />
-                    </div>
-                    <div>
-                      <button type="submit">Register Passkey</button>
-                    </div>
-                  </form>
-                </div>
-              )}
+              <div>
+                <br />
+                <label>No Passkey?</label>
+                <form onSubmit={this.handleRegister}>
+                  <div>
+                    <label> UserId: </label>
+                    <input type="text" value={userId} readOnly style={{ width: '260px' }} />
+                    <button onClick={this.regenUserId}>Regen</button>
+                  </div>
+                  <div>
+                    <label> DisplayName: </label>
+                    <input type="text" value={displayName} readOnly style={{ width: '260px' }} />
+                  </div>
+                  <div>
+                    <label>RPId: </label>
+                    <input type="text" value={rpId} onChange={this.handleRpId} />
+                  </div>
+                  <div>
+                    <button type="submit">Register Passkey</button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
         </div>

@@ -3,7 +3,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: top;
-  height: 60vh;
+  height: 100vh;
 }
 
 .center {
@@ -33,9 +33,25 @@
   margin-top: 10px;
 }
 
+.table {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80%;
+  border: 1px solid #000;
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.table-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 table {
   border-collapse: collapse;
-  width: 100%;
+  width: 80%;
 }
 
 table th,
