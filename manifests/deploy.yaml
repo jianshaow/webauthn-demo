@@ -16,7 +16,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: main
-        image: jianshao/webauthn-demo:0.1.5
+        image: jianshao/webauthn-demo:0.1.6
         ports:
         - containerPort: 80
         resources:

@@ -7,6 +7,7 @@ interface HomeState {
   loggedIn: boolean;
   userId: string;
   username: string;
+  rpId: string;
   credential: PublicKeyCredential | null;
   registerEnabled: boolean;
   loginEnabled: boolean;
@@ -20,6 +21,7 @@ class Home extends Component<{}, HomeState> {
       loggedIn: false,
       userId: '14562550-a677-4832-9add-77527ae332db',
       username: 'admin',
+      rpId: location.host,
       credential: null,
       registerEnabled: false,
       loginEnabled: false,
@@ -72,9 +74,13 @@ class Home extends Component<{}, HomeState> {
     this.setState({ username: e.target.value });
   };
 
+  handleRpId = (e: ChangeEvent<HTMLInputElement>) => {
+    this.setState({ rpId: e.target.value });
+  };
+
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, userId } = this.state;
+    const { username, userId, rpId } = this.state;
 
     try {
       this.appendToLog('Start register...')
@@ -85,6 +91,7 @@ class Home extends Component<{}, HomeState> {
       const createCredentialOptions: CredentialCreationOptions = {
         publicKey: {
           rp: {
+            id: rpId,
             name: 'AA Server',
           },
           user: {
@@ -191,9 +198,9 @@ class Home extends Component<{}, HomeState> {
       const algorithm = attestationResponse.getPublicKeyAlgorithm();
 
       const getAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
-        if (algorithm === -7) {
+        if (algorithm === -7) { // for iOS
           return { name: 'ECDSA', namedCurve: 'P-256' };
-        } else if (algorithm === -257) {
+        } else if (algorithm === -257) { // for Windows
           return { name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" } };
         } else {
           return 'ECDSA';
@@ -237,7 +244,7 @@ class Home extends Component<{}, HomeState> {
   };
 
   render() {
-    const { loggedIn, username, registerEnabled, loginEnabled, log } = this.state;
+    const { loggedIn, username, rpId, registerEnabled, loginEnabled, log } = this.state;
 
     return (
       <div className="container">
@@ -245,29 +252,33 @@ class Home extends Component<{}, HomeState> {
           {loggedIn ? (
             <div>
               <h1>Wellcome, {username}！</h1>
-              <button onClick={() => this.setState({ loggedIn: false })}>退出登录</button>
+              <button onClick={() => this.setState({ loggedIn: false })}>Logout</button>
             </div>
           ) : (
             <div>
               <h1>Login</h1>
               <form onSubmit={this.handleLogin}>
-                <label>
-                  Username:
-                  <input type="text" value={username} onChange={this.handleUsernameChange} />
-                </label>
+                <label> Username: </label>
+                <input type="text" value={username} onChange={this.handleUsernameChange} />
                 <br />
                 {registerEnabled ? (
-                  <button type="submit">Register FIDO2 Passkey</button>
+                  <button type="submit">Register Passkey</button>
                 ) : (
                   <button type="submit" disabled={!loginEnabled}>
-                    FIDO2 Passkey Login
+                    Passkey Login
                   </button>
                 )}
               </form>
               {registerEnabled ? null : (
-                <p>
-                  No FIDO2 Passkey？<button onClick={this.handleRegister}>Register FIDO2 Passkey</button>
-                </p>
+                <div>
+                  <br />
+                  <label>No Passkey？</label>
+                  <form onSubmit={this.handleRegister}>
+                    <label>RPId: </label>
+                    <input type="text" value={rpId} onChange={this.handleRpId} />
+                    <button type="submit" >Register Passkey</button>
+                  </form>
+                </div>
               )}
             </div>
           )}
