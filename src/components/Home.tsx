@@ -21,7 +21,7 @@ class Home extends Component<{}, HomeState> {
       loggedIn: false,
       userId: '14562550-a677-4832-9add-77527ae332db',
       username: 'admin',
-      rpId: location.host,
+      rpId: window.location.host,
       credential: null,
       registerEnabled: false,
       loginEnabled: false,
