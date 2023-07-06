@@ -199,7 +199,7 @@ class Home extends Component<{}, HomeState> {
 
       const getAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
         if (algorithm === -7) { // for iOS
-          return { name: 'ECDSA', namedCurve: 'P-256' };
+          return { name: 'ECDSA', hash: { name: "SHA-256" } };
         } else if (algorithm === -257) { // for Windows
           return { name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" } };
         } else {
