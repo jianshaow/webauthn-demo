@@ -120,7 +120,9 @@ class Home extends Component<{}, HomeState> {
 
   isSelected = (credentialId: string) => {
     const { allowCredentials } = this.state;
-    return allowCredentials.some((selectedCredential) => this.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId);
+    return allowCredentials.some(
+      (selectedCredential) => this.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
+    );
   };
 
   deleteCredential = (e: MouseEvent<HTMLButtonElement>) => {
@@ -154,7 +156,9 @@ class Home extends Component<{}, HomeState> {
       allowCredentials.push(allowCredential);
       this.setState({ allowCredentials: allowCredentials })
     } else {
-      const newCredentials = allowCredentials.filter((selectedCredential) => this.bufferToUTF8String(selectedCredential.id as ArrayBuffer) !== e.target.value);
+      const newCredentials = allowCredentials.filter(
+        (selectedCredential) => this.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) !== e.target.value
+      );
       this.setState({ allowCredentials: newCredentials });
     }
   };
@@ -381,7 +385,11 @@ class Home extends Component<{}, HomeState> {
                       {storedCredentials.map((credential) => (
                         <tr key={credential.id}>
                           <td>
-                            <input type="checkbox" value={credential.id} checked={this.isSelected(credential.id)} onChange={this.handleAllowCredentialsChange} />
+                            <input type="checkbox"
+                              value={credential.id}
+                              checked={this.isSelected(credential.id)}
+                              onChange={this.handleAllowCredentialsChange}
+                            />
                           </td>
                           <td>
                             {credential.username}
@@ -396,7 +404,7 @@ class Home extends Component<{}, HomeState> {
                 </div>
                 <div>
                   <label> Username: </label>
-                  <input type="text" value={username} onChange={this.handleUsernameChange} />
+                  <input type="text" value={username} onChange={this.handleUsernameChange} style={{ width: '160px' }}/>
                 </div>
                 <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
               </form>
@@ -411,7 +419,7 @@ class Home extends Component<{}, HomeState> {
                   </div>
                   <div>
                     <label> DisplayName: </label>
-                    <input type="text" value={displayName} readOnly style={{ width: '260px' }} />
+                    <input type="text" value={displayName} readOnly style={{ width: '160px' }} />
                   </div>
                   <div>
                     <label>RPId: </label>
@@ -452,7 +460,7 @@ class LogViewer extends Component<LogViewerState> {
     const { log } = this.props;
 
     return (
-      <textarea ref={this.logRef} value={log} readOnly rows={10} style={{ width: '80%', height: '200px' }} />
+      <textarea ref={this.logRef} value={log} readOnly rows={10} />
     );
   }
 }
