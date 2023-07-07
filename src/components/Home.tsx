@@ -127,7 +127,7 @@ class Home extends Component<{}, HomeState> {
 
   deleteCredential = (e: MouseEvent<HTMLButtonElement>) => {
     const { storedCredentials } = this.state;
-    const newCredentials = storedCredentials.filter((credential) => credential.id !== e.target.id);
+    const newCredentials = storedCredentials.filter((credential) => credential.id !== (e.target as HTMLButtonElement).id);
     this.setState({ storedCredentials: newCredentials });
     localStorage.setItem('credentials', JSON.stringify(newCredentials));
   }
