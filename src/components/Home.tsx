@@ -204,15 +204,11 @@ class Home extends Component<{}, HomeState> {
         },
       };
 
-      const assertion = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
-      this.appendToLog('assertion.id=' + assertion.id);
-      this.appendToLog('assertion.type=' + assertion.type);
+      const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
+      this.appendToLog('credential.id=' + credential.id);
+      this.appendToLog('credential.type=' + credential.type);
 
-      const { authenticatorData, signature, clientDataJSON, userHandle } = assertion.response as AuthenticatorAssertionResponse;
-
-      if (!userHandle) {
-        throw new Error('no user id')
-      }
+      const { authenticatorData, signature, clientDataJSON, userHandle } = credential.response as AuthenticatorAssertionResponse;
 
       // verify challenge
       const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
@@ -221,25 +217,34 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('actualChallenge=' + clientDataObj.challenge);
       this.appendToLog('expectedChallenge=' + utils.bufferToBase64URLString(challenge.buffer));
 
-      const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
-      const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
+      if (!userHandle) {
+        throw new Error('no user id')
+      }
 
-      // retrieve public key from attestation that returned from registering before
       if (!storedCredentials.length) {
         throw new Error('No credential stored, register first');
       }
 
       const userId = utils.bufferToUTF8String(userHandle);
       this.appendToLog('userId=' + userId);
-      const filteredCredentials = storedCredentials.filter((credential) => credential.userId === userId);
-      if (!filteredCredentials.length) {
-        throw new Error('no this user stored')
-      }
-      const credential = filteredCredentials[0];
 
-      const publicKeyDer = utils.base64URLStringToBuffer(credential.publicKey);
-      const algorithm = credential.publicKeyAlgorithm;
+      // search credential from storage by userId and credentialId
+      const filteredCredentials = storedCredentials.filter(
+        (candidateCredential) => candidateCredential.userId === userId && candidateCredential.id === credential.id
+      );
+
+      if (!filteredCredentials.length) {
+        throw new Error('no stored credential matched by id=' + credential.id + ' and userId=' + userId);
+      }
+      const registeredCredential = filteredCredentials[0];
+
+      // retrieve public key from attestation that returned from registering before
+      const publicKeyDer = utils.base64URLStringToBuffer(registeredCredential.publicKey);
+      const algorithm = registeredCredential.publicKeyAlgorithm;
       this.appendToLog('publicKeyAlgorithm=' + algorithm);
+
+      const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
+      const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
 
       const getImportAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
         if (algorithm === -7) { // for iOS
@@ -259,10 +264,6 @@ class Home extends Component<{}, HomeState> {
         } else {
           return 'ECDSA';
         }
-      }
-
-      if (!publicKeyDer) {
-        throw new Error('No public key');
       }
 
       // prepare public key
