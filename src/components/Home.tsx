@@ -1,6 +1,7 @@
 import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
-import './Home.css'
-import * as cbor from 'cbor-x'
+import * as cbor from 'cbor-x';
+import './Home.css';
+import * as utils from '../helpers/utils';
 
 interface HomeState {
   log: string;
@@ -55,73 +56,12 @@ class Home extends Component<{}, HomeState> {
     this.setState(prevState => ({ log: prevState.log + logEntry + '\n' }));
   };
 
-  bufferToUTF8String(value: ArrayBuffer): string {
-    return new TextDecoder('utf-8').decode(value);
-  }
 
-  stringToBuffer(value: string): ArrayBuffer {
-    return new TextEncoder().encode(value);
-  }
-
-  bufferToBase64URLString(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let str = '';
-
-    for (const charCode of bytes) {
-      str += String.fromCharCode(charCode);
-    }
-
-    const base64String = btoa(str);
-
-    return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  }
-
-  base64URLStringToBuffer(base64URLString: string): ArrayBuffer {
-    const base64 = base64URLString.replace(/-/g, '+').replace(/_/g, '/');
-
-    const padLength = (4 - (base64.length % 4)) % 4;
-    const padded = base64.padEnd(base64.length + padLength, '=');
-
-    const binary = atob(padded);
-
-    const buffer = new ArrayBuffer(binary.length);
-    const bytes = new Uint8Array(buffer);
-
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-
-    return buffer;
-  }
-
-  concat(arrays: Uint8Array[]): Uint8Array {
-    let pointer = 0;
-    const totalLength = arrays.reduce((prev, curr) => prev + curr.length, 0);
-
-    const toReturn = new Uint8Array(totalLength);
-
-    arrays.forEach(arr => {
-      toReturn.set(arr, pointer);
-      pointer += arr.length;
-    });
-
-    return toReturn;
-  }
-
-  generateUUID(): string {
-    const array = new Uint8Array(16);
-    crypto.getRandomValues(array);
-    array[6] = (array[6] & 0x0f) | 0x40;
-    array[8] = (array[8] & 0x3f) | 0x80;
-    const hex = Array.from(array, byte => byte.toString(16).padStart(2, '0'));
-    const uuid = `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`;
-    return uuid;
-  }
 
   isSelected = (credentialId: string) => {
     const { allowCredentials } = this.state;
     return allowCredentials.some(
-      (selectedCredential) => this.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
+      (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
     );
   };
 
@@ -134,14 +74,14 @@ class Home extends Component<{}, HomeState> {
 
   regenUserId = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    this.setState({ userId: this.generateUUID() });
+    this.setState({ userId: utils.generateUUID() });
   };
 
   handleUsernameChange = (e: ChangeEvent<HTMLInputElement>) => {
     this.setState({ username: e.target.value });
   };
 
-  handleRpId = (e: ChangeEvent<HTMLInputElement>) => {
+  handleRpIdChange = (e: ChangeEvent<HTMLInputElement>) => {
     this.setState({ rpId: e.target.value });
   };
 
@@ -150,14 +90,14 @@ class Home extends Component<{}, HomeState> {
     if (e.target.checked) {
       const allowCredential: PublicKeyCredentialDescriptor = {
         type: 'public-key',
-        id: this.base64URLStringToBuffer(e.target.value),
+        id: utils.base64URLStringToBuffer(e.target.value),
         transports: ['internal']
       }
       allowCredentials.push(allowCredential);
       this.setState({ allowCredentials: allowCredentials })
     } else {
       const newCredentials = allowCredentials.filter(
-        (selectedCredential) => this.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) !== e.target.value
+        (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) !== e.target.value
       );
       this.setState({ allowCredentials: newCredentials });
     }
@@ -214,11 +154,11 @@ class Home extends Component<{}, HomeState> {
       const { clientDataJSON, attestationObject } = attestationResponse;
 
       // verify challenge
-      const decodedClientData = this.bufferToUTF8String(clientDataJSON);
+      const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
       console.log('clientData=%o', clientDataObj);
       this.appendToLog('actualChallenge=' + clientDataObj.challenge);
-      this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer));
+      this.appendToLog('expectedChallenge=' + utils.bufferToBase64URLString(challenge.buffer));
 
       const attestationObj = cbor.decode(new Uint8Array(attestationObject));
       console.log('attestation=%o', attestationObj);
@@ -230,7 +170,7 @@ class Home extends Component<{}, HomeState> {
         userId: userId,
         username: username,
         displayName: displayName,
-        publicKey: this.bufferToBase64URLString(pubclicKeyDer),
+        publicKey: utils.bufferToBase64URLString(pubclicKeyDer),
         publicKeyAlgorithm: attestationResponse.getPublicKeyAlgorithm()
       });
       localStorage.setItem('credentials', JSON.stringify(storedCredentials));
@@ -275,21 +215,21 @@ class Home extends Component<{}, HomeState> {
       }
 
       // verify challenge
-      const decodedClientData = this.bufferToUTF8String(clientDataJSON);
+      const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
       console.log('clientData=%o', clientDataObj);
       this.appendToLog('actualChallenge=' + clientDataObj.challenge);
-      this.appendToLog('expectedChallenge=' + this.bufferToBase64URLString(challenge.buffer));
+      this.appendToLog('expectedChallenge=' + utils.bufferToBase64URLString(challenge.buffer));
 
       const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
-      const signatureBase = this.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
+      const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
 
       // retrieve public key from attestation that returned from registering before
       if (!storedCredentials.length) {
         throw new Error('No credential stored, register first');
       }
 
-      const userId = this.bufferToUTF8String(userHandle);
+      const userId = utils.bufferToUTF8String(userHandle);
       this.appendToLog('userId=' + userId);
       const filteredCredentials = storedCredentials.filter((credential) => credential.userId === userId);
       if (!filteredCredentials.length) {
@@ -297,7 +237,7 @@ class Home extends Component<{}, HomeState> {
       }
       const credential = filteredCredentials[0];
 
-      const publicKeyDer = this.base64URLStringToBuffer(credential.publicKey);
+      const publicKeyDer = utils.base64URLStringToBuffer(credential.publicKey);
       const algorithm = credential.publicKeyAlgorithm;
       this.appendToLog('publicKeyAlgorithm=' + algorithm);
 
@@ -364,7 +304,7 @@ class Home extends Component<{}, HomeState> {
         <div className="center">
           {loggedIn ? (
             <div>
-              <h1>Wellcome, {username}！</h1>
+              <h1>Wellcome, {username}!</h1>
               <button onClick={() => this.setState({ loggedIn: false })}>Logout</button>
             </div>
           ) : (
@@ -404,7 +344,12 @@ class Home extends Component<{}, HomeState> {
                 </div>
                 <div>
                   <label> Username: </label>
-                  <input type="text" value={username} onChange={this.handleUsernameChange} style={{ width: '160px' }}/>
+                  <input type="text"
+                    value={username}
+                    onChange={this.handleUsernameChange}
+                    style={{ width: '160px' }}
+                    autoComplete='username webauthn'
+                  />
                 </div>
                 <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
               </form>
@@ -423,7 +368,7 @@ class Home extends Component<{}, HomeState> {
                   </div>
                   <div>
                     <label>RPId: </label>
-                    <input type="text" value={rpId} onChange={this.handleRpId} />
+                    <input type="text" value={rpId} onChange={this.handleRpIdChange} />
                   </div>
                   <div>
                     <button type="submit">Register Passkey</button>
