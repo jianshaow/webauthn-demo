@@ -1,7 +1,7 @@
 import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
 import * as cbor from 'cbor-x';
-import './Home.css';
 import * as utils from '../helpers/utils';
+import './Home.css';
 
 interface HomeState {
   log: string;
@@ -12,6 +12,8 @@ interface HomeState {
   storedCredentials: Credential[];
   displayName: string;
   rpId: string;
+  showImport: boolean;
+  importCredential: string;
 }
 
 interface Credential {
@@ -42,6 +44,8 @@ class Home extends Component<{}, HomeState> {
       storedCredentials: credentials,
       rpId: window.location.host.split(':')[0],
       displayName: 'John Smith',
+      showImport: false,
+      importCredential: ''
     };
   }
 
@@ -54,9 +58,28 @@ class Home extends Component<{}, HomeState> {
     const timestamp = `${hours}:${minutes}:${seconds}.${milliseconds}`;
     const logEntry = `[${timestamp}] ${message}`;
     this.setState(prevState => ({ log: prevState.log + logEntry + '\n' }));
+  }
+
+  handleImportClick = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    this.setState({ showImport: true });
   };
 
+  handleImportClose = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const { storedCredentials, importCredential } = this.state;
+    if (!importCredential.length) {
+      this.setState({ showImport: false });
+      return;
+    }
+    storedCredentials.push(JSON.parse(importCredential));
+    localStorage.setItem('credentials', JSON.stringify(storedCredentials));
+    this.setState({ showImport: false, storedCredentials: storedCredentials, importCredential: '' });
+  };
 
+  handleImportCredentialChange = (e: ChangeEvent<HTMLInputElement>) => {
+    this.setState({ importCredential: e.target.value });
+  };
 
   isSelected = (credentialId: string) => {
     const { allowCredentials } = this.state;
@@ -70,7 +93,7 @@ class Home extends Component<{}, HomeState> {
     const newCredentials = storedCredentials.filter((credential) => credential.id !== (e.target as HTMLButtonElement).id);
     this.setState({ storedCredentials: newCredentials });
     localStorage.setItem('credentials', JSON.stringify(newCredentials));
-  }
+  };
 
   regenUserId = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -79,6 +102,10 @@ class Home extends Component<{}, HomeState> {
 
   handleUsernameChange = (e: ChangeEvent<HTMLInputElement>) => {
     this.setState({ username: e.target.value });
+  };
+
+  handleDisplayNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    this.setState({ displayName: e.target.value });
   };
 
   handleRpIdChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -94,7 +121,7 @@ class Home extends Component<{}, HomeState> {
         transports: ['internal']
       }
       allowCredentials.push(allowCredential);
-      this.setState({ allowCredentials: allowCredentials })
+      this.setState({ allowCredentials: allowCredentials });
     } else {
       const newCredentials = allowCredentials.filter(
         (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) !== e.target.value
@@ -108,8 +135,8 @@ class Home extends Component<{}, HomeState> {
     const { username, displayName, userId, rpId, storedCredentials } = this.state;
 
     try {
-      this.appendToLog('Start register...')
-      this.appendToLog('username=' + username)
+      this.appendToLog('Start register...');
+      this.appendToLog('username=' + username);
       this.appendToLog('userId=' + userId);
 
       const challenge = new Uint8Array(32);
@@ -165,15 +192,17 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('attestationObject.fmt=' + attestationObj.fmt);
 
       // save credential in state and local storage
-      storedCredentials.push({
+      const credentialToBeStored = {
         id: credential.id,
         userId: userId,
         username: username,
         displayName: displayName,
         publicKey: utils.bufferToBase64URLString(pubclicKeyDer),
         publicKeyAlgorithm: attestationResponse.getPublicKeyAlgorithm()
-      });
+      };
+      storedCredentials.push(credentialToBeStored);
       localStorage.setItem('credentials', JSON.stringify(storedCredentials));
+      this.appendToLog('credentialStored=' + JSON.stringify(credentialToBeStored));
 
       this.appendToLog('Register success');
     } catch (error) {
@@ -190,9 +219,9 @@ class Home extends Component<{}, HomeState> {
     const { username, storedCredentials, allowCredentials } = this.state;
 
     try {
-      this.appendToLog('Start login...')
-      this.appendToLog('username=' + username)
-      this.appendToLog('storedCredentials.length=' + storedCredentials.length)
+      this.appendToLog('Start login...');
+      this.appendToLog('username=' + username);
+      this.appendToLog('storedCredentials.length=' + storedCredentials.length);
 
       const challenge = new Uint8Array(32);
       crypto.getRandomValues(challenge);
@@ -218,7 +247,7 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('expectedChallenge=' + utils.bufferToBase64URLString(challenge.buffer));
 
       if (!userHandle) {
-        throw new Error('no user id')
+        throw new Error('no user id');
       }
 
       if (!storedCredentials.length) {
@@ -243,6 +272,7 @@ class Home extends Component<{}, HomeState> {
       const algorithm = registeredCredential.publicKeyAlgorithm;
       this.appendToLog('publicKeyAlgorithm=' + algorithm);
 
+      // prepare signature base
       const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
       const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
 
@@ -299,7 +329,8 @@ class Home extends Component<{}, HomeState> {
   };
 
   render() {
-    const { loggedIn, userId, username, storedCredentials, displayName, rpId, log } = this.state;
+    const { loggedIn, userId, username, storedCredentials, displayName, rpId, log, showImport } = this.state;
+    const example = '{"id":"","userId":"","username":"","displayName":"","publicKey":"","publicKeyAlgorithm":-7}'
     return (
       <div className="container">
         <div className="center">
@@ -313,6 +344,18 @@ class Home extends Component<{}, HomeState> {
               <h1>Login</h1>
               <form onSubmit={this.handleLogin}>
                 <label>storedCredentials:</label>
+                <br />
+                <button onClick={this.handleImportClick}>Add Credential</button>
+                {showImport && (
+                  <div>
+                    <input
+                      type="text"
+                      placeholder={example}
+                      onChange={this.handleImportCredentialChange}
+                      style={{ width: '60%' }} />
+                    <button onClick={this.handleImportClose}>OK</button>
+                  </div>
+                )}
                 <div className='table-container'>
                   <table>
                     <thead>
@@ -365,7 +408,7 @@ class Home extends Component<{}, HomeState> {
                   </div>
                   <div>
                     <label> DisplayName: </label>
-                    <input type="text" value={displayName} readOnly style={{ width: '160px' }} />
+                    <input type="text" value={displayName} onChange={this.handleDisplayNameChange} style={{ width: '160px' }} />
                   </div>
                   <div>
                     <label>RPId: </label>
