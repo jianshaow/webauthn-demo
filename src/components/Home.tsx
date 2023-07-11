@@ -1,6 +1,7 @@
 import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
 import * as cbor from 'cbor-x';
 import * as utils from '../helpers/utils';
+import * as authData from '../helpers/authData';
 import './Home.css';
 
 interface HomeState {
@@ -30,7 +31,7 @@ class Home extends Component<{}, HomeState> {
     super(props);
 
     const credentialsJson = localStorage.getItem('credentials');
-    var credentials = [];
+    let credentials = [];
     if (credentialsJson) {
       credentials = JSON.parse(credentialsJson);
     }
@@ -172,6 +173,9 @@ class Home extends Component<{}, HomeState> {
       const attestationResponse = credential.response as AuthenticatorAttestationResponse;
       this.appendToLog('attestation.publicKeyAlgorithm=' + attestationResponse.getPublicKeyAlgorithm());
       this.appendToLog('attestation.transports=' + attestationResponse.getTransports());
+
+      const parsedAuthData = authData.parseAuthenticatorData(new Uint8Array(attestationResponse.getAuthenticatorData()));
+      console.log('authData=%o', parsedAuthData);
 
       const pubclicKeyDer = attestationResponse.getPublicKey();
       if (!pubclicKeyDer) {
