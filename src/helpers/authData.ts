@@ -10,7 +10,7 @@ function toDataView(array: Uint8Array): DataView {
     return new DataView(array.buffer, array.byteOffset, array.length);
 }
 
-function decodeFirst<Type>(input: Uint8Array): Type {
+export function decodeFirst<Type>(input: Uint8Array): Type {
     const decoded = encoder.decodeMultiple(input) as undefined | Type[];
 
     if (decoded === undefined) {

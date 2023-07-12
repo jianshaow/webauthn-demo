@@ -22,6 +22,7 @@ interface Credential {
   userId: string;
   username: string;
   displayName: string;
+  rpId: string;
   publicKey: string;
   publicKeyAlgorithm: number;
 }
@@ -119,7 +120,7 @@ class Home extends Component<{}, HomeState> {
       const allowCredential: PublicKeyCredentialDescriptor = {
         type: 'public-key',
         id: utils.base64URLStringToBuffer(e.target.value),
-        transports: ['internal']
+        transports: ['internal', 'hybrid']
       }
       allowCredentials.push(allowCredential);
       this.setState({ allowCredentials: allowCredentials });
@@ -177,6 +178,11 @@ class Home extends Component<{}, HomeState> {
       const parsedAuthData = authData.parseAuthenticatorData(new Uint8Array(attestationResponse.getAuthenticatorData()));
       console.log('authData=%o', parsedAuthData);
 
+      if (parsedAuthData.credentialPublicKey) {
+        const publicKeyDose = authData.decodeFirst<authData.COSEPublicKey>(parsedAuthData.credentialPublicKey);
+        console.log('publicKeyDose=%o', publicKeyDose);
+      }
+
       const pubclicKeyDer = attestationResponse.getPublicKey();
       if (!pubclicKeyDer) {
         throw new Error('no public key');
@@ -201,6 +207,7 @@ class Home extends Component<{}, HomeState> {
         userId: userId,
         username: username,
         displayName: displayName,
+        rpId: rpId,
         publicKey: utils.bufferToBase64URLString(pubclicKeyDer),
         publicKeyAlgorithm: attestationResponse.getPublicKeyAlgorithm()
       };
@@ -334,7 +341,7 @@ class Home extends Component<{}, HomeState> {
 
   render() {
     const { loggedIn, userId, username, storedCredentials, displayName, rpId, log, showImport } = this.state;
-    const example = '{"id":"","userId":"","username":"","displayName":"","publicKey":"","publicKeyAlgorithm":-7}'
+    const example = '{"id":"","userId":"","username":"","displayName":"","rpId":"","publicKey":"","publicKeyAlgorithm":-7}'
     return (
       <div className="container">
         <div className="center">
