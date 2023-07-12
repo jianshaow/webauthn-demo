@@ -396,9 +396,7 @@ class Home extends Component<{}, HomeState> {
                               onChange={this.handleAllowCredentialsChange}
                             />
                           </td>
-                          <td>
-                            {credential.username}
-                          </td>
+                          <td>{credential.username}</td>
                           <td>
                             <button id={credential.id} onClick={this.deleteCredential}>delete</button>
                           </td>
@@ -429,7 +427,11 @@ class Home extends Component<{}, HomeState> {
                   </div>
                   <div>
                     <label> DisplayName: </label>
-                    <input type="text" value={displayName} onChange={this.handleDisplayNameChange} style={{ width: '160px' }} />
+                    <input type="text"
+                      value={displayName}
+                      onChange={this.handleDisplayNameChange}
+                      style={{ width: '160px' }}
+                    />
                   </div>
                   <div>
                     <label>RPId: </label>
