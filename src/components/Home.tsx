@@ -11,7 +11,6 @@ interface HomeState {
   username: string;
   allowCredentials: PublicKeyCredentialDescriptor[];
   storedCredentials: Credential[];
-  transports: AuthenticatorTransport[];
   displayName: string;
   rpId: string;
   showImport: boolean;
@@ -20,16 +19,17 @@ interface HomeState {
 
 interface Credential {
   id: string;
+  type: PublicKeyCredentialType;
   userId: string;
   username: string;
   displayName: string;
   rpId: string;
+  transports: AuthenticatorTransport[];
   publicKey: string;
   publicKeyAlgorithm: number;
 }
 
 class Home extends Component<{}, HomeState> {
-  allowTransports = ['internal', 'hybrid', 'ble', 'nfc', 'usb'];
   constructor(props: {}) {
     super(props);
 
@@ -46,7 +46,6 @@ class Home extends Component<{}, HomeState> {
       username: 'John.Smith@TechGenius.com',
       allowCredentials: [],
       storedCredentials: credentials,
-      transports: ['internal'],
       rpId: window.location.host.split(':')[0],
       displayName: 'John Smith',
       showImport: false,
@@ -118,12 +117,13 @@ class Home extends Component<{}, HomeState> {
   };
 
   handleAllowCredentialsChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { allowCredentials, transports } = this.state;
+    const { allowCredentials, storedCredentials } = this.state;
     if (e.target.checked) {
+      const credential = storedCredentials.filter((candidateCredential) => candidateCredential.id = e.target.value)[0];
       const allowCredential: PublicKeyCredentialDescriptor = {
-        type: 'public-key',
+        type: credential.type,
         id: utils.base64URLStringToBuffer(e.target.value),
-        transports: transports
+        transports: credential.transports
       }
       allowCredentials.push(allowCredential);
       this.setState({ allowCredentials: allowCredentials });
@@ -135,25 +135,6 @@ class Home extends Component<{}, HomeState> {
     }
   };
 
-  handleTransportsChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { transports } = this.state;
-    if (e.target.checked) {
-      transports.push(e.target.value as AuthenticatorTransport);
-      this.setState({ transports: transports });
-    } else {
-      const newTransports = transports.filter(
-        (selectedTransport) => selectedTransport === e.target.value
-      );
-      this.setState({ transports: newTransports });
-    }
-  }
-
-  isTransportSelected = (transport: string) => {
-    const { transports } = this.state;
-    return transports.some(
-      (selectedRransport) => selectedRransport === transport
-    );
-  };
 
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
@@ -225,12 +206,18 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('attestationObject.fmt=' + attestationObj.fmt);
 
       // save credential in state and local storage
+      let transports: AuthenticatorTransport[] = ['internal'];
+      if (!attestationResponse.getTransports().length) {
+        transports = attestationResponse.getTransports() as AuthenticatorTransport[];
+      }
       const credentialToBeStored = {
         id: credential.id,
+        type: credential.type as PublicKeyCredentialType,
         userId: userId,
         username: username,
         displayName: displayName,
         rpId: rpId,
+        transports: transports,
         publicKey: utils.bufferToBase64URLString(pubclicKeyDer),
         publicKeyAlgorithm: attestationResponse.getPublicKeyAlgorithm()
       };
@@ -421,27 +408,12 @@ class Home extends Component<{}, HomeState> {
                   </table>
                 </div>
                 <div>
-                  <label> Transports: </label>
-                  <div className='frame'>
-                    {this.allowTransports.map((item) => (
-                      <label key={item}>
-                        <input type="checkbox"
-                          value={item}
-                          checked={this.isTransportSelected(item)}
-                          onChange={this.handleTransportsChange}
-                        />
-                        {item}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
                   <label> Username: </label>
                   <input type="text"
                     value={username}
                     onChange={this.handleUsernameChange}
                     style={{ width: '160px' }}
-                    autoComplete='webauthn'
+                    autoComplete='username webauthn'
                   />
                 </div>
                 <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
