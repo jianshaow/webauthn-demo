@@ -11,6 +11,7 @@ interface HomeState {
   username: string;
   allowCredentials: PublicKeyCredentialDescriptor[];
   storedCredentials: Credential[];
+  transports: AuthenticatorTransport[];
   displayName: string;
   rpId: string;
   showImport: boolean;
@@ -28,6 +29,7 @@ interface Credential {
 }
 
 class Home extends Component<{}, HomeState> {
+  allowTransports = ['internal', 'hybrid', 'ble', 'nfc', 'usb'];
   constructor(props: {}) {
     super(props);
 
@@ -44,6 +46,7 @@ class Home extends Component<{}, HomeState> {
       username: 'John.Smith@TechGenius.com',
       allowCredentials: [],
       storedCredentials: credentials,
+      transports: ['internal'],
       rpId: window.location.host.split(':')[0],
       displayName: 'John Smith',
       showImport: false,
@@ -83,7 +86,7 @@ class Home extends Component<{}, HomeState> {
     this.setState({ importCredential: e.target.value });
   };
 
-  isSelected = (credentialId: string) => {
+  isCredentialSelected = (credentialId: string) => {
     const { allowCredentials } = this.state;
     return allowCredentials.some(
       (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
@@ -115,12 +118,12 @@ class Home extends Component<{}, HomeState> {
   };
 
   handleAllowCredentialsChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { allowCredentials } = this.state;
+    const { allowCredentials, transports } = this.state;
     if (e.target.checked) {
       const allowCredential: PublicKeyCredentialDescriptor = {
         type: 'public-key',
         id: utils.base64URLStringToBuffer(e.target.value),
-        transports: ['internal', 'hybrid']
+        transports: transports
       }
       allowCredentials.push(allowCredential);
       this.setState({ allowCredentials: allowCredentials });
@@ -130,6 +133,26 @@ class Home extends Component<{}, HomeState> {
       );
       this.setState({ allowCredentials: newCredentials });
     }
+  };
+
+  handleTransportsChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { transports } = this.state;
+    if (e.target.checked) {
+      transports.push(e.target.value as AuthenticatorTransport);
+      this.setState({ transports: transports });
+    } else {
+      const newTransports = transports.filter(
+        (selectedTransport) => selectedTransport === e.target.value
+      );
+      this.setState({ transports: newTransports });
+    }
+  }
+
+  isTransportSelected = (transport: string) => {
+    const { transports } = this.state;
+    return transports.some(
+      (selectedRransport) => selectedRransport === transport
+    );
   };
 
   handleRegister = async (e: FormEvent) => {
@@ -341,7 +364,7 @@ class Home extends Component<{}, HomeState> {
 
   render() {
     const { loggedIn, userId, username, storedCredentials, displayName, rpId, log, showImport } = this.state;
-    const example = '{"id":"","userId":"","username":"","displayName":"","rpId":"","publicKey":"","publicKeyAlgorithm":-7}'
+    const example = '{"id":"","userId":"","username":"","displayName":"","rpId":"","publicKey":"","publicKeyAlgorithm":-7}';
     return (
       <div className="container">
         <div className="center">
@@ -354,7 +377,7 @@ class Home extends Component<{}, HomeState> {
             <div>
               <h1>Login</h1>
               <form onSubmit={this.handleLogin}>
-                <label>storedCredentials:</label>
+                <label>Stored Credentials:</label>
                 <br />
                 <button onClick={this.handleImportClick}>Add Credential</button>
                 {showImport && (
@@ -372,7 +395,7 @@ class Home extends Component<{}, HomeState> {
                     <thead>
                       <tr>
                         <th>allowCredentials</th>
-                        <th>credentials</th>
+                        <th>username</th>
                         <th>action</th>
                       </tr>
                     </thead>
@@ -382,7 +405,7 @@ class Home extends Component<{}, HomeState> {
                           <td>
                             <input type="checkbox"
                               value={credential.id}
-                              checked={this.isSelected(credential.id)}
+                              checked={this.isCredentialSelected(credential.id)}
                               onChange={this.handleAllowCredentialsChange}
                             />
                           </td>
@@ -398,12 +421,27 @@ class Home extends Component<{}, HomeState> {
                   </table>
                 </div>
                 <div>
+                  <label> Transports: </label>
+                  <div className='frame'>
+                    {this.allowTransports.map((item) => (
+                      <label key={item}>
+                        <input type="checkbox"
+                          value={item}
+                          checked={this.isTransportSelected(item)}
+                          onChange={this.handleTransportsChange}
+                        />
+                        {item}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
                   <label> Username: </label>
                   <input type="text"
                     value={username}
                     onChange={this.handleUsernameChange}
                     style={{ width: '160px' }}
-                    autoComplete='username webauthn'
+                    autoComplete='webauthn'
                   />
                 </div>
                 <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
