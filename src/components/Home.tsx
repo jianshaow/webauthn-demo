@@ -207,7 +207,7 @@ class Home extends Component<{}, HomeState> {
 
       // save credential in state and local storage
       let transports: AuthenticatorTransport[] = ['internal'];
-      if (!attestationResponse.getTransports().length) {
+      if (attestationResponse.getTransports().length) {
         transports = attestationResponse.getTransports() as AuthenticatorTransport[];
       }
       const credentialToBeStored = {
