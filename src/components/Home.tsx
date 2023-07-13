@@ -119,7 +119,7 @@ class Home extends Component<{}, HomeState> {
   handleAllowCredentialsChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { allowCredentials, storedCredentials } = this.state;
     if (e.target.checked) {
-      const credential = storedCredentials.filter((candidateCredential) => candidateCredential.id = e.target.value)[0];
+      const credential = storedCredentials.filter((candidateCredential) => candidateCredential.id === e.target.value)[0];
       const allowCredential: PublicKeyCredentialDescriptor = {
         type: credential.type,
         id: utils.base64URLStringToBuffer(e.target.value),
@@ -206,10 +206,7 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('attestationObject.fmt=' + attestationObj.fmt);
 
       // save credential in state and local storage
-      let transports: AuthenticatorTransport[] = ['internal'];
-      if (attestationResponse.getTransports().length) {
-        transports = attestationResponse.getTransports() as AuthenticatorTransport[];
-      }
+      const transports = attestationResponse.getTransports() as AuthenticatorTransport[];
       const credentialToBeStored = {
         id: credential.id,
         type: credential.type as PublicKeyCredentialType,
