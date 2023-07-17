@@ -126,6 +126,18 @@ export function parseAuthenticatorData(authData: Uint8Array): ParsedAuthenticato
     };
 }
 
+export function toCrvString(coseCrv: number){
+    if (coseCrv === COSECRV.P256) {
+        return 'P-256';
+      } else if (coseCrv === COSECRV.P384) {
+        return 'P-384';
+      } else if (coseCrv === COSECRV.P521) {
+        return 'P-521';
+      } else {
+        throw new Error(`Unexpected COSE crv value $(coseCrv)`);
+      }
+}
+
 export type ParsedAuthenticatorData = {
     rpIdHash: Uint8Array;
     flagsBuf: Uint8Array;
@@ -217,3 +229,10 @@ export enum COSEALG {
     RS512 = -259,
     RS1 = -65535,
 }
+
+export enum COSECRV {
+    P256 = 1,
+    P384 = 2,
+    P521 = 3,
+    ED25519 = 6,
+  }

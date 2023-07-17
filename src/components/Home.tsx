@@ -26,6 +26,7 @@ interface Credential {
   rpId: string;
   transports: AuthenticatorTransport[];
   publicKey: string;
+  publicKeyJwk: any;
   publicKeyAlgorithm: number;
 }
 
@@ -135,7 +136,6 @@ class Home extends Component<{}, HomeState> {
     }
   };
 
-
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     const { username, displayName, userId, rpId, storedCredentials } = this.state;
@@ -182,6 +182,7 @@ class Home extends Component<{}, HomeState> {
       const parsedAuthData = authData.parseAuthenticatorData(new Uint8Array(attestationResponse.getAuthenticatorData()));
       console.log('authData=%o', parsedAuthData);
 
+      let publicKeyJwk;
       if (parsedAuthData.credentialPublicKey) {
         const publicKeyCose = authData.decodeFirst<authData.COSEPublicKey>(parsedAuthData.credentialPublicKey);
         console.log('publicKeyCose=%o', publicKeyCose);
@@ -192,24 +193,30 @@ class Home extends Component<{}, HomeState> {
         if (coseKty === authData.COSEKTY.EC2) {
           const ecPublicKeyCose = publicKeyCose as authData.COSEPublicKeyEC2;
           const coseCrv = ecPublicKeyCose.get(authData.COSEKEYS.crv);
-          this.appendToLog('coseCrv=' + coseCrv);
           const coseX = ecPublicKeyCose.get(authData.COSEKEYS.x);
           const coseY = ecPublicKeyCose.get(authData.COSEKEYS.y);
-          if (coseX) {
-            this.appendToLog('coseX=' + utils.bufferToBase64URLString(coseX.buffer));
+
+          if (!coseCrv || !coseX || !coseY) {
+            throw new Error('no ec key info');
           }
-          if (coseY) {
-            this.appendToLog('coseY=' + utils.bufferToBase64URLString(coseY.buffer));
+          publicKeyJwk = {
+            kty: 'EC',
+            crv: authData.toCrvString(coseCrv),
+            x: utils.bufferToBase64URLString(coseX.buffer),
+            y: utils.bufferToBase64URLString(coseY.buffer)
           }
         } else if (coseKty === authData.COSEKTY.RSA) {
           const rsaPublicKeyCose = publicKeyCose as authData.COSEPublicKeyRSA;
           const coseN = rsaPublicKeyCose.get(authData.COSEKEYS.n);
           const coseE = rsaPublicKeyCose.get(authData.COSEKEYS.e);
-          if (coseN) {
-            this.appendToLog('coseN=' + utils.bufferToBase64URLString(coseN.buffer));
+          if (!coseN || !coseE) {
+            throw new Error('no ec key info');
           }
-          if (coseE) {
-            this.appendToLog('coseE=' + utils.bufferToBase64URLString(coseE.buffer));
+          publicKeyJwk = {
+            kty: 'RSA',
+            crv: '',
+            n: utils.bufferToBase64URLString(coseN.buffer),
+            e: utils.bufferToBase64URLString(coseE.buffer)
           }
         }
       }
@@ -218,11 +225,10 @@ class Home extends Component<{}, HomeState> {
       if (!pubclicKeyDer) {
         throw new Error('no public key');
       }
-      this.appendToLog('pubclicKeyDer=' + utils.bufferToBase64URLString(pubclicKeyDer));
 
       const { clientDataJSON, attestationObject } = attestationResponse;
 
-      // verify challenge
+      // verify challenge 
       const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
       console.log('clientData=%o', clientDataObj);
@@ -244,6 +250,7 @@ class Home extends Component<{}, HomeState> {
         rpId: rpId,
         transports: transports,
         publicKey: utils.bufferToBase64URLString(pubclicKeyDer),
+        publicKeyJwk: publicKeyJwk,
         publicKeyAlgorithm: attestationResponse.getPublicKeyAlgorithm()
       };
       storedCredentials.push(credentialToBeStored);
@@ -313,15 +320,9 @@ class Home extends Component<{}, HomeState> {
       }
       const registeredCredential = filteredCredentials[0];
 
-      // retrieve public key from attestation that returned from registering before
-      const publicKeyDer = utils.base64URLStringToBuffer(registeredCredential.publicKey);
+      // prepare algorithm
       const algorithm = registeredCredential.publicKeyAlgorithm;
       this.appendToLog('publicKeyAlgorithm=' + algorithm);
-
-      // prepare signature base
-      const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
-      const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
-
       const getImportAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
         if (algorithm === -7) { // for iOS
           return { name: 'ECDSA', namedCurve: 'P-256' };
@@ -342,7 +343,12 @@ class Home extends Component<{}, HomeState> {
         }
       }
 
+      // prepare signature base
+      const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
+      const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
+
       // prepare public key
+      const publicKeyDer = utils.base64URLStringToBuffer(registeredCredential.publicKey);
       const publicKey = await crypto.subtle.importKey(
         'spki',
         publicKeyDer,
@@ -350,6 +356,15 @@ class Home extends Component<{}, HomeState> {
         true,
         ['verify']
       );
+      // const publicKeyJwk = registeredCredential.publicKeyJwk;
+      // this.appendToLog('publicKeyJwk=' + JSON.stringify(publicKeyJwk));
+      // const publicKey = await crypto.subtle.importKey(
+      //   'jwk',
+      //   publicKeyJwk,
+      //   getImportAlgorithm(algorithm),
+      //   false,
+      //   ['verify']
+      // );
 
       // verify signature
       const result = await crypto.subtle.verify(
