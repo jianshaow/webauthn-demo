@@ -183,14 +183,42 @@ class Home extends Component<{}, HomeState> {
       console.log('authData=%o', parsedAuthData);
 
       if (parsedAuthData.credentialPublicKey) {
-        const publicKeyDose = authData.decodeFirst<authData.COSEPublicKey>(parsedAuthData.credentialPublicKey);
-        console.log('publicKeyDose=%o', publicKeyDose);
+        const publicKeyCose = authData.decodeFirst<authData.COSEPublicKey>(parsedAuthData.credentialPublicKey);
+        console.log('publicKeyCose=%o', publicKeyCose);
+        const coseKty = publicKeyCose.get(authData.COSEKEYS.kty);
+        const coseKeyAlg = publicKeyCose.get(authData.COSEKEYS.alg);
+        this.appendToLog('coseKty=' + coseKty);
+        this.appendToLog('coseKeyAlg=' + coseKeyAlg);
+        if (coseKty === authData.COSEKTY.EC2) {
+          const ecPublicKeyCose = publicKeyCose as authData.COSEPublicKeyEC2;
+          const coseCrv = ecPublicKeyCose.get(authData.COSEKEYS.crv);
+          this.appendToLog('coseCrv=' + coseCrv);
+          const coseX = ecPublicKeyCose.get(authData.COSEKEYS.x);
+          const coseY = ecPublicKeyCose.get(authData.COSEKEYS.y);
+          if (coseX) {
+            this.appendToLog('coseX=' + utils.bufferToBase64URLString(coseX.buffer));
+          }
+          if (coseY) {
+            this.appendToLog('coseY=' + utils.bufferToBase64URLString(coseY.buffer));
+          }
+        } else if (coseKty === authData.COSEKTY.RSA) {
+          const rsaPublicKeyCose = publicKeyCose as authData.COSEPublicKeyRSA;
+          const coseN = rsaPublicKeyCose.get(authData.COSEKEYS.n);
+          const coseE = rsaPublicKeyCose.get(authData.COSEKEYS.e);
+          if (coseN) {
+            this.appendToLog('coseN=' + utils.bufferToBase64URLString(coseN.buffer));
+          }
+          if (coseE) {
+            this.appendToLog('coseE=' + utils.bufferToBase64URLString(coseE.buffer));
+          }
+        }
       }
 
       const pubclicKeyDer = attestationResponse.getPublicKey();
       if (!pubclicKeyDer) {
         throw new Error('no public key');
       }
+      this.appendToLog('pubclicKeyDer=' + utils.bufferToBase64URLString(pubclicKeyDer));
 
       const { clientDataJSON, attestationObject } = attestationResponse;
 

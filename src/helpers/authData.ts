@@ -171,6 +171,22 @@ export type COSEPublicKey = {
     set(key: COSEKEYS.alg, value: COSEALG): void;
 };
 
+export type COSEPublicKeyEC2 = COSEPublicKey & {
+    get(key: COSEKEYS.crv): number | undefined;
+    get(key: COSEKEYS.x): Uint8Array | undefined;
+    get(key: COSEKEYS.y): Uint8Array | undefined;
+    set(key: COSEKEYS.crv, value: number): void;
+    set(key: COSEKEYS.x, value: Uint8Array): void;
+    set(key: COSEKEYS.y, value: Uint8Array): void;
+};
+
+export type COSEPublicKeyRSA = COSEPublicKey & {
+    get(key: COSEKEYS.n): Uint8Array | undefined;
+    get(key: COSEKEYS.e): Uint8Array | undefined;
+    set(key: COSEKEYS.n, value: Uint8Array): void;
+    set(key: COSEKEYS.e, value: Uint8Array): void;
+};
+
 export enum COSEKEYS {
     kty = 1,
     alg = 3,
