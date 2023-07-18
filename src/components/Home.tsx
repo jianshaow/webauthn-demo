@@ -2,6 +2,10 @@ import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
 import * as cbor from 'cbor-x';
 import * as utils from '../helpers/utils';
 import * as authData from '../helpers/authData';
+import * as reg from '../services/register';
+import * as authn from '../services/authenticate';
+import { CredentialEntity } from '../services/types';
+import { getCredentials } from '../services/credential'
 import './Home.css';
 
 interface HomeState {
@@ -10,43 +14,23 @@ interface HomeState {
   userId: string;
   username: string;
   allowCredentials: PublicKeyCredentialDescriptor[];
-  storedCredentials: Credential[];
+  storedCredentials: CredentialEntity[];
   displayName: string;
   rpId: string;
   showImport: boolean;
   importCredential: string;
 }
 
-interface Credential {
-  id: string;
-  type: PublicKeyCredentialType;
-  userId: string;
-  username: string;
-  displayName: string;
-  rpId: string;
-  transports: AuthenticatorTransport[];
-  publicKey: string;
-  publicKeyJwk: any;
-  publicKeyAlgorithm: number;
-}
-
 class Home extends Component<{}, HomeState> {
   constructor(props: {}) {
     super(props);
-
-    const credentialsJson = localStorage.getItem('credentials');
-    let credentials = [];
-    if (credentialsJson) {
-      credentials = JSON.parse(credentialsJson);
-    }
-
     this.state = {
       log: '',
       loggedIn: false,
       userId: '14562550-a677-4832-9add-77527ae332db',
       username: 'John.Smith@TechGenius.com',
       allowCredentials: [],
-      storedCredentials: credentials,
+      storedCredentials: getCredentials(),
       rpId: window.location.host.split(':')[0],
       displayName: 'John Smith',
       showImport: false,
@@ -145,30 +129,8 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('username=' + username);
       this.appendToLog('userId=' + userId);
 
-      const challenge = new Uint8Array(32);
-      crypto.getRandomValues(challenge);
-      const createCredentialOptions: CredentialCreationOptions = {
-        publicKey: {
-          rp: {
-            id: rpId,
-            name: 'AA Server',
-          },
-          user: {
-            id: new TextEncoder().encode(userId),
-            name: username,
-            displayName: username,
-          },
-          challenge: challenge,
-          pubKeyCredParams: [
-            { type: 'public-key', alg: -257 }, { type: 'public-key', alg: -7 }
-          ],
-          authenticatorSelection: {
-            authenticatorAttachment: 'platform',
-            userVerification: 'preferred',
-          },
-          attestation: 'direct',
-        },
-      };
+      // initialize register to get creation options
+      const createCredentialOptions = reg.initRegistration(rpId, userId, username);
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
       this.appendToLog('credential.id=' + credential.id);
@@ -182,79 +144,20 @@ class Home extends Component<{}, HomeState> {
       const parsedAuthData = authData.parseAuthenticatorData(new Uint8Array(attestationResponse.getAuthenticatorData()));
       console.log('authData=%o', parsedAuthData);
 
-      let publicKeyJwk;
-      if (parsedAuthData.credentialPublicKey) {
-        const publicKeyCose = authData.decodeFirst<authData.COSEPublicKey>(parsedAuthData.credentialPublicKey);
-        console.log('publicKeyCose=%o', publicKeyCose);
-        const coseKty = publicKeyCose.get(authData.COSEKEYS.kty);
-        const coseKeyAlg = publicKeyCose.get(authData.COSEKEYS.alg);
-        this.appendToLog('coseKty=' + coseKty);
-        this.appendToLog('coseKeyAlg=' + coseKeyAlg);
-        if (coseKty === authData.COSEKTY.EC2) {
-          const ecPublicKeyCose = publicKeyCose as authData.COSEPublicKeyEC2;
-          const coseCrv = ecPublicKeyCose.get(authData.COSEKEYS.crv);
-          const coseX = ecPublicKeyCose.get(authData.COSEKEYS.x);
-          const coseY = ecPublicKeyCose.get(authData.COSEKEYS.y);
-
-          if (!coseCrv || !coseX || !coseY) {
-            throw new Error('no ec key info');
-          }
-          publicKeyJwk = {
-            kty: 'EC',
-            crv: authData.toCrvString(coseCrv),
-            x: utils.bufferToBase64URLString(coseX.buffer),
-            y: utils.bufferToBase64URLString(coseY.buffer)
-          }
-        } else if (coseKty === authData.COSEKTY.RSA) {
-          const rsaPublicKeyCose = publicKeyCose as authData.COSEPublicKeyRSA;
-          const coseN = rsaPublicKeyCose.get(authData.COSEKEYS.n);
-          const coseE = rsaPublicKeyCose.get(authData.COSEKEYS.e);
-          if (!coseN || !coseE) {
-            throw new Error('no ec key info');
-          }
-          publicKeyJwk = {
-            kty: 'RSA',
-            crv: '',
-            n: utils.bufferToBase64URLString(coseN.buffer),
-            e: utils.bufferToBase64URLString(coseE.buffer)
-          }
-        }
-      }
-
-      const pubclicKeyDer = attestationResponse.getPublicKey();
-      if (!pubclicKeyDer) {
-        throw new Error('no public key');
-      }
-
       const { clientDataJSON, attestationObject } = attestationResponse;
 
-      // verify challenge 
       const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
       const clientDataObj = JSON.parse(decodedClientData);
       console.log('clientData=%o', clientDataObj);
-      this.appendToLog('actualChallenge=' + clientDataObj.challenge);
-      this.appendToLog('expectedChallenge=' + utils.bufferToBase64URLString(challenge.buffer));
+      this.appendToLog('responseChallenge=' + clientDataObj.challenge);
 
       const attestationObj = cbor.decode(new Uint8Array(attestationObject));
       console.log('attestation=%o', attestationObj);
       this.appendToLog('attestationObject.fmt=' + attestationObj.fmt);
 
-      // save credential in state and local storage
-      const transports = attestationResponse.getTransports() as AuthenticatorTransport[];
-      const credentialToBeStored = {
-        id: credential.id,
-        type: credential.type as PublicKeyCredentialType,
-        userId: userId,
-        username: username,
-        displayName: displayName,
-        rpId: rpId,
-        transports: transports,
-        publicKey: utils.bufferToBase64URLString(pubclicKeyDer),
-        publicKeyJwk: publicKeyJwk,
-        publicKeyAlgorithm: attestationResponse.getPublicKeyAlgorithm()
-      };
+      // finish register to save credential
+      const credentialToBeStored = reg.finishRegistration(credential, rpId, userId, username, displayName);
       storedCredentials.push(credentialToBeStored);
-      localStorage.setItem('credentials', JSON.stringify(storedCredentials));
       this.appendToLog('credentialStored=' + JSON.stringify(credentialToBeStored));
 
       this.appendToLog('Register success');
@@ -264,7 +167,7 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('Error=' + error);
     }
 
-    this.setState({ username: 'John.Smith@TechGenius.com', storedCredentials: storedCredentials });
+    this.setState({ storedCredentials: storedCredentials });
   };
 
   handleLogin = async (e: FormEvent) => {
@@ -276,117 +179,24 @@ class Home extends Component<{}, HomeState> {
       this.appendToLog('username=' + username);
       this.appendToLog('storedCredentials.length=' + storedCredentials.length);
 
-      const challenge = new Uint8Array(32);
-      crypto.getRandomValues(challenge);
-      const getCredentialOptions: CredentialRequestOptions = {
-        publicKey: {
-          challenge: challenge,
-          allowCredentials: allowCredentials,
-          userVerification: 'preferred',
-        },
-      };
+      // initialize authentication for get options
+      const getCredentialOptions = authn.initAuthentication(allowCredentials);
 
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
       this.appendToLog('credential.id=' + credential.id);
       this.appendToLog('credential.type=' + credential.type);
 
-      const { authenticatorData, signature, clientDataJSON, userHandle } = credential.response as AuthenticatorAssertionResponse;
-
-      // verify challenge
-      const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
-      const clientDataObj = JSON.parse(decodedClientData);
-      console.log('clientData=%o', clientDataObj);
-      this.appendToLog('actualChallenge=' + clientDataObj.challenge);
-      this.appendToLog('expectedChallenge=' + utils.bufferToBase64URLString(challenge.buffer));
-
-      if (!userHandle) {
-        throw new Error('no user id');
-      }
-
-      if (!storedCredentials.length) {
-        throw new Error('No credential stored, register first');
-      }
-
-      const userId = utils.bufferToUTF8String(userHandle);
-      this.appendToLog('userId=' + userId);
-
-      // search credential from storage by userId and credentialId
-      const filteredCredentials = storedCredentials.filter(
-        (candidateCredential) => candidateCredential.userId === userId && candidateCredential.id === credential.id
-      );
-
-      if (!filteredCredentials.length) {
-        throw new Error('no stored credential matched by id=' + credential.id + ' and userId=' + userId);
-      }
-      const registeredCredential = filteredCredentials[0];
-
-      // prepare algorithm
-      const algorithm = registeredCredential.publicKeyAlgorithm;
-      this.appendToLog('publicKeyAlgorithm=' + algorithm);
-      const getImportAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
-        if (algorithm === -7) { // for iOS
-          return { name: 'ECDSA', namedCurve: 'P-256' };
-        } else if (algorithm === -257) { // for Windows
-          return { name: 'RSASSA-PKCS1-v1_5', hash: { name: 'SHA-256' } };
-        } else {
-          return 'ECDSA';
-        }
-      }
-
-      const getVerifyAlgorithm = (algorithm: number): RsaPssParams | EcdsaParams | AlgorithmIdentifier => {
-        if (algorithm === -7) { // for iOS
-          return { name: 'ECDSA', hash: { name: 'SHA-256' } };
-        } else if (algorithm === -257) { // for Windows
-          return { name: 'RSASSA-PKCS1-v1_5', hash: { name: 'SHA-256' } };
-        } else {
-          return 'ECDSA';
-        }
-      }
-
-      // prepare signature base
-      const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
-      const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
-
-      // prepare public key
-      const publicKeyDer = utils.base64URLStringToBuffer(registeredCredential.publicKey);
-      const publicKey = await crypto.subtle.importKey(
-        'spki',
-        publicKeyDer,
-        getImportAlgorithm(algorithm),
-        true,
-        ['verify']
-      );
-      // const publicKeyJwk = registeredCredential.publicKeyJwk;
-      // this.appendToLog('publicKeyJwk=' + JSON.stringify(publicKeyJwk));
-      // const publicKey = await crypto.subtle.importKey(
-      //   'jwk',
-      //   publicKeyJwk,
-      //   getImportAlgorithm(algorithm),
-      //   false,
-      //   ['verify']
-      // );
-
-      // verify signature
-      const result = await crypto.subtle.verify(
-        getVerifyAlgorithm(algorithm),
-        publicKey,
-        signature,
-        signatureBase
-      );
-
-      if (!result) {
-        throw new Error('Invalid signature');
-      }
+      // finish authentication for a credential
+      const registeredCredential = await authn.finishAuthentication(credential);
 
       this.setState({ loggedIn: true });
       this.appendToLog('Login success');
+      this.setState({ username: registeredCredential.username });
     } catch (error) {
       console.error(error);
       alert('Login fail');
       this.appendToLog('Error=' + error);
     }
-
-    this.setState({ username: 'John.Smith@TechGenius.com' });
   };
 
   render() {
