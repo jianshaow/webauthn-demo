@@ -1,11 +1,10 @@
 import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
-import * as cbor from 'cbor-x';
 import * as utils from '../helpers/utils';
-import * as authData from '../helpers/authData';
 import * as reg from '../services/register';
 import * as authn from '../services/authenticate';
 import { CredentialEntity } from '../services/types';
-import { getCredentials } from '../services/credential'
+import { setLogger } from '../services/common';
+import { getCredentials } from '../services/credential';
 import './Home.css';
 
 interface HomeState {
@@ -21,24 +20,31 @@ interface HomeState {
   importCredential: string;
 }
 
+const defaultState = {
+  log: '',
+  loggedIn: false,
+  userId: '14562550-a677-4832-9add-77527ae332db',
+  username: 'John.Smith@TechGenius.com',
+  allowCredentials: [],
+  rpId: window.location.host.split(':')[0],
+  displayName: 'John Smith',
+  showImport: false,
+  importCredential: ''
+}
+
 class Home extends Component<{}, HomeState> {
+
   constructor(props: {}) {
     super(props);
-    this.state = {
-      log: '',
-      loggedIn: false,
-      userId: '14562550-a677-4832-9add-77527ae332db',
-      username: 'John.Smith@TechGenius.com',
-      allowCredentials: [],
-      storedCredentials: getCredentials(),
-      rpId: window.location.host.split(':')[0],
-      displayName: 'John Smith',
-      showImport: false,
-      importCredential: ''
-    };
+    this.state = { ...defaultState, storedCredentials: getCredentials() };
+    setLogger(this);
   }
 
-  appendToLog(message: string) {
+  resetState() {
+    this.setState({ ...defaultState, storedCredentials: getCredentials() });
+  }
+
+  log(message: string) {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -125,46 +131,28 @@ class Home extends Component<{}, HomeState> {
     const { username, displayName, userId, rpId, storedCredentials } = this.state;
 
     try {
-      this.appendToLog('Start register...');
-      this.appendToLog('username=' + username);
-      this.appendToLog('userId=' + userId);
+      this.log('Start register...');
+      this.log('username=' + username);
+      this.log('userId=' + userId);
 
       // initialize register to get creation options
       const createCredentialOptions = reg.initRegistration(rpId, userId, username);
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
-      this.appendToLog('credential.id=' + credential.id);
-      this.appendToLog('credential.type=' + credential.type);
-      this.appendToLog('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
-
-      const attestationResponse = credential.response as AuthenticatorAttestationResponse;
-      this.appendToLog('attestation.publicKeyAlgorithm=' + attestationResponse.getPublicKeyAlgorithm());
-      this.appendToLog('attestation.transports=' + attestationResponse.getTransports());
-
-      const parsedAuthData = authData.parseAuthenticatorData(new Uint8Array(attestationResponse.getAuthenticatorData()));
-      console.log('authData=%o', parsedAuthData);
-
-      const { clientDataJSON, attestationObject } = attestationResponse;
-
-      const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
-      const clientDataObj = JSON.parse(decodedClientData);
-      console.log('clientData=%o', clientDataObj);
-      this.appendToLog('responseChallenge=' + clientDataObj.challenge);
-
-      const attestationObj = cbor.decode(new Uint8Array(attestationObject));
-      console.log('attestation=%o', attestationObj);
-      this.appendToLog('attestationObject.fmt=' + attestationObj.fmt);
+      this.log('credential.id=' + credential.id);
+      this.log('credential.type=' + credential.type);
+      this.log('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
 
       // finish register to save credential
       const credentialToBeStored = reg.finishRegistration(credential, rpId, userId, username, displayName);
       storedCredentials.push(credentialToBeStored);
-      this.appendToLog('credentialStored=' + JSON.stringify(credentialToBeStored));
+      this.log('credentialStored=' + JSON.stringify(credentialToBeStored));
 
-      this.appendToLog('Register success');
+      this.log('Register success');
     } catch (error) {
       console.error(error);
       alert('Register fail');
-      this.appendToLog('Error=' + error);
+      this.log('Error=' + error);
     }
 
     this.setState({ storedCredentials: storedCredentials });
@@ -175,27 +163,31 @@ class Home extends Component<{}, HomeState> {
     const { username, storedCredentials, allowCredentials } = this.state;
 
     try {
-      this.appendToLog('Start login...');
-      this.appendToLog('username=' + username);
-      this.appendToLog('storedCredentials.length=' + storedCredentials.length);
+      this.log('Start login...');
+      this.log('username=' + username);
+      this.log('storedCredentials.length=' + storedCredentials.length);
 
       // initialize authentication for get options
       const getCredentialOptions = authn.initAuthentication(allowCredentials);
 
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
-      this.appendToLog('credential.id=' + credential.id);
-      this.appendToLog('credential.type=' + credential.type);
+      this.log('credential.id=' + credential.id);
+      this.log('credential.type=' + credential.type);
 
       // finish authentication for a credential
       const registeredCredential = await authn.finishAuthentication(credential);
 
       this.setState({ loggedIn: true });
-      this.appendToLog('Login success');
-      this.setState({ username: registeredCredential.username });
+      this.log('Login success');
+      this.setState({
+        username: registeredCredential.username,
+        displayName: registeredCredential.displayName,
+        userId: registeredCredential.userId
+      });
     } catch (error) {
       console.error(error);
       alert('Login fail');
-      this.appendToLog('Error=' + error);
+      this.log('Error=' + error);
     }
   };
 
@@ -207,8 +199,8 @@ class Home extends Component<{}, HomeState> {
         <div className="center">
           {loggedIn ? (
             <div>
-              <h1>Wellcome, {username}!</h1>
-              <button onClick={() => this.setState({ loggedIn: false })}>Logout</button>
+              <h1>Wellcome, {displayName}!</h1>
+              <button onClick={() => this.resetState()}>Logout</button>
             </div>
           ) : (
             <div>

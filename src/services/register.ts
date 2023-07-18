@@ -1,6 +1,8 @@
+import * as cbor from 'cbor-x';
 import * as utils from '../helpers/utils';
 import * as authData from '../helpers/authData';
 import * as cred from '../services/credential'
+import { getLogger } from '../services/common';
 
 const registerData: Map<string, CredentialCreationOptions> = new Map();
 
@@ -36,6 +38,9 @@ export function initRegistration(rpId: string, userId: string, username: string)
 export function finishRegistration(credential: PublicKeyCredential, rpId: string, userId: string, username: string, displayName: string) {
   const attestationResponse = credential.response as AuthenticatorAttestationResponse;
   const transports = attestationResponse.getTransports() as AuthenticatorTransport[];
+  getLogger().log('attestation.publicKeyAlgorithm=' + attestationResponse.getPublicKeyAlgorithm());
+  getLogger().log('attestation.transports=' + transports);
+
   const pubclicKeyDer = attestationResponse.getPublicKey();
 
   if (!pubclicKeyDer) {
@@ -45,6 +50,11 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
   const { clientDataJSON, attestationObject } = attestationResponse;
   const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
   const clientDataObj = JSON.parse(decodedClientData);
+  getLogger().log('clientDataObj=' + decodedClientData);
+
+  const attestationObj = cbor.decode(new Uint8Array(attestationObject));
+  console.log('attestation=%o', attestationObj);
+  getLogger().log('attestationObject.fmt=' + attestationObj.fmt);
 
   const { challenge } = clientDataObj;
   const options = registerData.get(challenge);
@@ -62,6 +72,7 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
   }
 
   const parsedAuthData = authData.parseAuthenticatorData(new Uint8Array(attestationResponse.getAuthenticatorData()));
+  console.log('authData=%o', parsedAuthData);
 
   let publicKeyJwk;
   if (parsedAuthData.credentialPublicKey) {
@@ -94,7 +105,7 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
       }
       publicKeyJwk = {
         kty: 'RSA',
-        crv: '',
+        alg: 'RS256',
         n: utils.bufferToBase64URLString(coseN.buffer),
         e: utils.bufferToBase64URLString(coseE.buffer)
       }

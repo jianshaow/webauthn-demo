@@ -1,5 +1,6 @@
 import * as utils from '../helpers/utils';
 import * as cred from './credential';
+import { getLogger } from '../services/common';
 import { CredentialEntity } from './types'
 
 const authnData: Map<string, CredentialRequestOptions> = new Map();
@@ -20,9 +21,11 @@ export function initAuthentication(allowCredentials: PublicKeyCredentialDescript
 
 export async function finishAuthentication(credential: PublicKeyCredential): Promise<CredentialEntity> {
   const { authenticatorData, signature, clientDataJSON, userHandle } = credential.response as AuthenticatorAssertionResponse;
+
   const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
   const clientDataObj = JSON.parse(decodedClientData);
   console.log('clientData=%o', clientDataObj);
+  getLogger().log('clientDataObj=' + decodedClientData);
 
   const { challenge, origin } = clientDataObj;
   const options = authnData.get(challenge);
@@ -36,6 +39,7 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
   }
 
   const userId = utils.bufferToUTF8String(userHandle);
+  console.log('userhandle=%s', userId);
 
   const storedCredentials = cred.getCredentials();
   const filteredCredentials = storedCredentials.filter(
@@ -55,7 +59,6 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
 
   // prepare algorithm
   const algorithm = registeredCredential.publicKeyAlgorithm;
-
   const getImportAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
     if (algorithm === -7) { // for iOS
       return { name: 'ECDSA', namedCurve: 'P-256' };
@@ -65,7 +68,6 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
       return 'ECDSA';
     }
   }
-
   const getVerifyAlgorithm = (algorithm: number): RsaPssParams | EcdsaParams | AlgorithmIdentifier => {
     if (algorithm === -7) { // for iOS
       return { name: 'ECDSA', hash: { name: 'SHA-256' } };
@@ -90,7 +92,7 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
     ['verify']
   );
   // const publicKeyJwk = registeredCredential.publicKeyJwk;
-  // this.appendToLog('publicKeyJwk=' + JSON.stringify(publicKeyJwk));
+  // getLogger().log('publicKeyJwk=' + JSON.stringify(publicKeyJwk));
   // const publicKey = await crypto.subtle.importKey(
   //   'jwk',
   //   publicKeyJwk,
