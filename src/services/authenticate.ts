@@ -83,33 +83,33 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
   const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
 
   // prepare public key
-  const publicKeyDer = utils.base64URLStringToBuffer(registeredCredential.publicKey);
-  const publicKey = await crypto.subtle.importKey(
-    'spki',
-    publicKeyDer,
-    getImportAlgorithm(algorithm),
-    true,
-    ['verify']
-  );
-  // const publicKeyJwk = registeredCredential.publicKeyJwk;
-  // getLogger().log('publicKeyJwk=' + JSON.stringify(publicKeyJwk));
+  // const publicKeyDer = utils.base64URLStringToBuffer(registeredCredential.publicKey);
   // const publicKey = await crypto.subtle.importKey(
-  //   'jwk',
-  //   publicKeyJwk,
+  //   'spki',
+  //   publicKeyDer,
   //   getImportAlgorithm(algorithm),
-  //   false,
+  //   true,
   //   ['verify']
   // );
+  const publicKeyJwk = registeredCredential.publicKeyJwk;
+  getLogger().log('publicKeyJwk=' + JSON.stringify(publicKeyJwk));
+  const publicKey = await crypto.subtle.importKey(
+    'jwk',
+    publicKeyJwk,
+    getImportAlgorithm(algorithm),
+    false,
+    ['verify']
+  );
 
   // verify signature
-  const result = await crypto.subtle.verify(
+  const valid = await crypto.subtle.verify(
     getVerifyAlgorithm(algorithm),
     publicKey,
     signature,
     signatureBase
   );
 
-  if (!result) {
+  if (!valid) {
     throw new Error('Invalid signature');
   }
 

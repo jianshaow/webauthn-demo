@@ -93,8 +93,8 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
       publicKeyJwk = {
         kty: 'EC',
         crv: authData.toCrvString(coseCrv),
-        x: utils.bufferToBase64URLString(coseX.buffer),
-        y: utils.bufferToBase64URLString(coseY.buffer)
+        x: utils.bufferToBase64URLString(coseX),
+        y: utils.bufferToBase64URLString(coseY)
       }
     } else if (coseKty === authData.COSEKTY.RSA) {
       const rsaPublicKeyCose = publicKeyCose as authData.COSEPublicKeyRSA;
@@ -106,8 +106,8 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
       publicKeyJwk = {
         kty: 'RSA',
         alg: 'RS256',
-        n: utils.bufferToBase64URLString(coseN.buffer),
-        e: utils.bufferToBase64URLString(coseE.buffer)
+        n: utils.bufferToBase64URLString(coseN),
+        e: utils.bufferToBase64URLString(coseE)
       }
     }
   }
