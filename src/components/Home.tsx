@@ -4,7 +4,7 @@ import * as reg from '../services/register';
 import * as authn from '../services/authenticate';
 import { CredentialEntity } from '../services/types';
 import { setLogger } from '../services/common';
-import { getCredentials } from '../services/credential';
+import { getCredentials, deleteCredential, saveCredential } from '../services/credential';
 import './Home.css';
 
 interface HomeState {
@@ -62,14 +62,13 @@ class Home extends Component<{}, HomeState> {
 
   handleImportClose = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const { storedCredentials, importCredential } = this.state;
+    const { importCredential } = this.state;
     if (!importCredential.length) {
       this.setState({ showImport: false });
       return;
     }
-    storedCredentials.push(JSON.parse(importCredential));
-    localStorage.setItem('credentials', JSON.stringify(storedCredentials));
-    this.setState({ showImport: false, storedCredentials: storedCredentials, importCredential: '' });
+    const newCredentials = saveCredential(JSON.parse(importCredential));
+    this.setState({ showImport: false, storedCredentials: newCredentials, importCredential: '' });
   };
 
   handleImportCredentialChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -84,10 +83,8 @@ class Home extends Component<{}, HomeState> {
   };
 
   deleteCredential = (e: MouseEvent<HTMLButtonElement>) => {
-    const { storedCredentials } = this.state;
-    const newCredentials = storedCredentials.filter((credential) => credential.id !== (e.target as HTMLButtonElement).id);
+    const newCredentials = deleteCredential((e.target as HTMLButtonElement).id);
     this.setState({ storedCredentials: newCredentials });
-    localStorage.setItem('credentials', JSON.stringify(newCredentials));
   };
 
   regenUserId = (e: MouseEvent<HTMLButtonElement>) => {
