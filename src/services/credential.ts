@@ -21,11 +21,6 @@ export function getCredentials(): CredentialEntity[] {
 }
 
 export function getCredential(credentialId: string): CredentialEntity {
-  const credentialsJson = localStorage.getItem('credentials');
-  let credentials = [];
-  if (credentialsJson) {
-    credentials = JSON.parse(credentialsJson);
-  }
   const newCredentials = getCredentials().filter((credential) => credential.id === credentialId);
   if (!newCredentials.length) {
     throw new Error(`no credential with id $(credentialId)`);
