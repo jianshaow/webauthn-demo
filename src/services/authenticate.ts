@@ -29,6 +29,7 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
 
   const { challenge, origin } = clientDataObj;
   const options = authnData.get(challenge);
+  authnData.delete(challenge);
 
   if (!options) {
     throw new Error('no credential related to the challenge');

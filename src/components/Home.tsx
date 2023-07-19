@@ -86,14 +86,14 @@ class Home extends Component<{}, HomeState> {
 
   deleteCredential = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const credentialId = (e.target as HTMLButtonElement).id.split('-')[1];
+    const credentialId = (e.target as HTMLButtonElement).id.split('.')[1];
     const newCredentials = deleteCredential(credentialId);
     this.setState({ storedCredentials: newCredentials });
   };
 
   copyCredential = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const credentialId = (e.target as HTMLButtonElement).id.split('-')[1];
+    const credentialId = (e.target as HTMLButtonElement).id.split('.')[1];
     const credential = getCredential(credentialId);
     navigator.clipboard.writeText(JSON.stringify(credential));
     this.setState({ showCopiedMessage: true });
@@ -252,8 +252,8 @@ class Home extends Component<{}, HomeState> {
                           </td>
                           <td>{credential.username}</td>
                           <td>
-                            <button id={'del-' + credential.id} onClick={this.deleteCredential}>delete</button>
-                            <button id={'cpy-' + credential.id} onClick={this.copyCredential}>copy</button>
+                            <button id={'del.' + credential.id} onClick={this.deleteCredential}>delete</button>
+                            <button id={'cpy.' + credential.id} onClick={this.copyCredential}>copy</button>
                             {showCopiedMessage && 'Copied'}
                           </td>
                         </tr>

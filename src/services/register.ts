@@ -58,6 +58,7 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
 
   const { challenge } = clientDataObj;
   const options = registerData.get(challenge);
+  registerData.delete(challenge);
   if (!options) {
     throw new Error('no credential related to the challenge');
   }
@@ -125,7 +126,6 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
     publicKeyAlgorithm: attestationResponse.getPublicKeyAlgorithm()
   };
 
-  registerData.delete(challenge);
   cred.saveCredential(credentialToBeStored);
 
   return credentialToBeStored;
