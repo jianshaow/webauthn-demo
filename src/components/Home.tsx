@@ -42,10 +42,6 @@ class Home extends Component<{}, HomeState> {
     setLogger(this);
   }
 
-  resetState() {
-    this.setState({ ...defaultState, storedCredentials: getCredentials() });
-  }
-
   log(message: string) {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
@@ -57,11 +53,6 @@ class Home extends Component<{}, HomeState> {
     this.setState(prevState => ({ log: prevState.log + logEntry + '\n' }));
   }
 
-  handleImportClick = (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    this.setState({ showImport: true });
-  };
-
   handleImportClose = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const { importCredential } = this.state;
@@ -71,10 +62,6 @@ class Home extends Component<{}, HomeState> {
     }
     const newCredentials = saveCredential(JSON.parse(importCredential));
     this.setState({ showImport: false, storedCredentials: newCredentials, importCredential: '' });
-  };
-
-  handleImportCredentialChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ importCredential: e.target.value });
   };
 
   isCredentialSelected = (credentialId: string) => {
@@ -102,22 +89,11 @@ class Home extends Component<{}, HomeState> {
     }, 2000);
   };
 
-  regenUserId = (e: MouseEvent<HTMLButtonElement>) => {
+  pasteCredential = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    this.setState({ userId: utils.generateUUID() });
-  };
-
-  handleUsernameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ username: e.target.value });
-  };
-
-  handleDisplayNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ displayName: e.target.value });
-  };
-
-  handleRpIdChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ rpId: e.target.value });
-  };
+    const credentialJson = await navigator.clipboard.readText();
+    this.setState({ importCredential: credentialJson });
+  }
 
   handleAllowCredentialsChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { allowCredentials, storedCredentials } = this.state;
@@ -204,7 +180,7 @@ class Home extends Component<{}, HomeState> {
   };
 
   render() {
-    const { loggedIn, userId, username, storedCredentials, displayName, rpId, log, showImport, showCopiedMessage } = this.state;
+    const { loggedIn, userId, username, storedCredentials, importCredential, displayName, rpId, log, showImport, showCopiedMessage } = this.state;
     const example = '{"id":"","userId":"","username":"","displayName":"","rpId":"","publicKey":"","publicKeyAlgorithm":-7}';
     return (
       <div className="container">
@@ -212,7 +188,9 @@ class Home extends Component<{}, HomeState> {
           {loggedIn ? (
             <div>
               <h1>Wellcome, {displayName}!</h1>
-              <button onClick={() => this.resetState()}>Logout</button>
+              <button onClick={() => {
+                this.setState({ ...defaultState, storedCredentials: getCredentials() });
+              }}>Logout</button>
             </div>
           ) : (
             <div>
@@ -220,14 +198,25 @@ class Home extends Component<{}, HomeState> {
               <form onSubmit={this.handleLogin}>
                 <label>Stored Credentials:</label>
                 <br />
-                <button onClick={this.handleImportClick}>Add Credential</button>
+                <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault();
+                  this.setState({ showImport: !showImport });
+                }}>Add Credential</button>
                 {showImport && (
                   <div>
                     <input
                       type="text"
                       placeholder={example}
-                      onChange={this.handleImportCredentialChange}
+                      value={importCredential}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                        this.setState({ importCredential: e.target.value });
+                      }}
                       style={{ width: '60%' }} />
+                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      this.setState({ importCredential: '' });
+                    }}>Reset</button>
+                    <button onClick={this.pasteCredential}>Paste</button>
                     <button onClick={this.handleImportClose}>OK</button>
                   </div>
                 )}
@@ -252,8 +241,8 @@ class Home extends Component<{}, HomeState> {
                           </td>
                           <td>{credential.username}</td>
                           <td>
-                            <button id={'del.' + credential.id} onClick={this.deleteCredential}>delete</button>
-                            <button id={'cpy.' + credential.id} onClick={this.copyCredential}>copy</button>
+                            <button id={'del.' + credential.id} onClick={this.deleteCredential}>Delete</button>
+                            <button id={'cpy.' + credential.id} onClick={this.copyCredential}>Copy</button>
                             {showCopiedMessage && 'Copied'}
                           </td>
                         </tr>
@@ -265,7 +254,9 @@ class Home extends Component<{}, HomeState> {
                   <label> Username: </label>
                   <input type="text"
                     value={username}
-                    onChange={this.handleUsernameChange}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                      this.setState({ username: e.target.value });
+                    }}
                     style={{ width: '160px' }}
                     autoComplete='username webauthn'
                   />
@@ -279,19 +270,26 @@ class Home extends Component<{}, HomeState> {
                   <div>
                     <label> UserId: </label>
                     <input type="text" value={userId} readOnly style={{ width: '260px' }} />
-                    <button onClick={this.regenUserId}>Regen</button>
+                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      this.setState({ userId: utils.generateUUID() });
+                    }}>Regen</button>
                   </div>
                   <div>
                     <label> DisplayName: </label>
                     <input type="text"
                       value={displayName}
-                      onChange={this.handleDisplayNameChange}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                        this.setState({ displayName: e.target.value });
+                      }}
                       style={{ width: '160px' }}
                     />
                   </div>
                   <div>
                     <label>RPId: </label>
-                    <input type="text" value={rpId} onChange={this.handleRpIdChange} />
+                    <input type="text" value={rpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                      this.setState({ rpId: e.target.value });
+                    }} />
                   </div>
                   <div>
                     <button type="submit">Register Passkey</button>
