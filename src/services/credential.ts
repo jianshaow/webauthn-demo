@@ -26,7 +26,7 @@ export function getCredential(credentialId: string): CredentialEntity {
   if (credentialsJson) {
     credentials = JSON.parse(credentialsJson);
   }
-  const newCredentials = getCredentials().filter((credential) => credential.id == credentialId);
+  const newCredentials = getCredentials().filter((credential) => credential.id === credentialId);
   if (!newCredentials.length) {
     throw new Error(`no credential with id $(credentialId)`);
   }
