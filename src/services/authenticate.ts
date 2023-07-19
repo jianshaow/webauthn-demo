@@ -24,7 +24,7 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
 
   const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
   const clientDataObj = JSON.parse(decodedClientData);
-  console.log('clientData=%o', clientDataObj);
+  console.info('clientData=%o', clientDataObj);
   getLogger().log('clientDataObj=' + decodedClientData);
 
   const { challenge, origin } = clientDataObj;
@@ -40,7 +40,7 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
   }
 
   const userId = utils.bufferToUTF8String(userHandle);
-  console.log('userhandle=%s', userId);
+  getLogger().log('userhandle=' + userId);
 
   const storedCredentials = cred.getCredentials();
   const filteredCredentials = storedCredentials.filter(

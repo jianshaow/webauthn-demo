@@ -12,6 +12,7 @@ interface HomeState {
   loggedIn: boolean;
   userId: string;
   username: string;
+  excludeCredentials: PublicKeyCredentialDescriptor[];
   allowCredentials: PublicKeyCredentialDescriptor[];
   storedCredentials: CredentialEntity[];
   displayName: string;
@@ -26,6 +27,7 @@ const defaultState = {
   loggedIn: false,
   userId: '14562550-a677-4832-9add-77527ae332db',
   username: 'John.Smith@TechGenius.com',
+  excludeCredentials: [],
   allowCredentials: [],
   rpId: window.location.host.split(':')[0],
   displayName: 'John Smith',
@@ -64,9 +66,16 @@ class Home extends Component<{}, HomeState> {
     this.setState({ showImport: false, storedCredentials: newCredentials, importCredential: '' });
   };
 
-  isCredentialSelected = (credentialId: string) => {
+  isAllowCredentialSelected = (credentialId: string) => {
     const { allowCredentials } = this.state;
     return allowCredentials.some(
+      (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
+    );
+  };
+
+  isExcludeCredentialSelected = (credentialId: string) => {
+    const { excludeCredentials } = this.state;
+    return excludeCredentials.some(
       (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
     );
   };
@@ -95,6 +104,25 @@ class Home extends Component<{}, HomeState> {
     this.setState({ importCredential: credentialJson });
   }
 
+  handleExcludeCredentialsChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { excludeCredentials, storedCredentials } = this.state;
+    if (e.target.checked) {
+      const credential = storedCredentials.filter((candidateCredential) => candidateCredential.id === e.target.value)[0];
+      const excludeCredential: PublicKeyCredentialDescriptor = {
+        type: credential.type,
+        id: utils.base64URLStringToBuffer(e.target.value),
+        transports: credential.transports
+      }
+      excludeCredentials.push(excludeCredential);
+      this.setState({ excludeCredentials: excludeCredentials });
+    } else {
+      const newCredentials = excludeCredentials.filter(
+        (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) !== e.target.value
+      );
+      this.setState({ excludeCredentials: newCredentials });
+    }
+  };
+
   handleAllowCredentialsChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { allowCredentials, storedCredentials } = this.state;
     if (e.target.checked) {
@@ -116,7 +144,7 @@ class Home extends Component<{}, HomeState> {
 
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, displayName, userId, rpId, storedCredentials } = this.state;
+    const { username, displayName, userId, rpId, storedCredentials, excludeCredentials } = this.state;
 
     try {
       this.log('Start register...');
@@ -124,7 +152,7 @@ class Home extends Component<{}, HomeState> {
       this.log('userId=' + userId);
 
       // initialize register to get creation options
-      const createCredentialOptions = reg.initRegistration(rpId, userId, username);
+      const createCredentialOptions = reg.initRegistration(rpId, userId, username, excludeCredentials);
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
       this.log('credential.id=' + credential.id);
@@ -139,7 +167,7 @@ class Home extends Component<{}, HomeState> {
       this.log('Register success');
     } catch (error) {
       console.error(error);
-      alert('Register fail');
+      alert('Register fail: ' + (error as Error).message);
       this.log('Error=' + error);
     }
 
@@ -174,7 +202,7 @@ class Home extends Component<{}, HomeState> {
       });
     } catch (error) {
       console.error(error);
-      alert('Login fail');
+      alert('Login fail: ' + (error as Error).message);
       this.log('Error=' + error);
     }
   };
@@ -194,62 +222,70 @@ class Home extends Component<{}, HomeState> {
             </div>
           ) : (
             <div>
+              <h1>Stored Credentials:</h1>
+              <br />
+              <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                e.preventDefault();
+                this.setState({ showImport: !showImport });
+              }}>Add Credential</button>
+              {showImport && (
+                <div>
+                  <input
+                    type="text"
+                    placeholder={example}
+                    value={importCredential}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                      this.setState({ importCredential: e.target.value });
+                    }}
+                    style={{ width: '60%' }} />
+                  <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault();
+                    this.setState({ importCredential: '' });
+                  }}>Reset</button>
+                  <button onClick={this.pasteCredential}>Paste</button>
+                  <button onClick={this.handleImportClose}>OK</button>
+                </div>
+              )}
+              <div className='table-container'>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>excludeCredentials </th>
+                      <th>allowCredentials</th>
+                      <th>username</th>
+                      <th>action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {storedCredentials.map((credential) => (
+                      <tr key={credential.id}>
+                        <td>
+                          <input type="checkbox"
+                            value={credential.id}
+                            checked={this.isExcludeCredentialSelected(credential.id)}
+                            onChange={this.handleExcludeCredentialsChange}
+                          />
+                        </td>
+                        <td>
+                          <input type="checkbox"
+                            value={credential.id}
+                            checked={this.isAllowCredentialSelected(credential.id)}
+                            onChange={this.handleAllowCredentialsChange}
+                          />
+                        </td>
+                        <td>{credential.username}</td>
+                        <td>
+                          <button id={'del.' + credential.id} onClick={this.deleteCredential}>Delete</button>
+                          <button id={'cpy.' + credential.id} onClick={this.copyCredential}>Copy</button>
+                          {showCopiedMessage && 'Copied'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <h1>Login</h1>
               <form onSubmit={this.handleLogin}>
-                <label>Stored Credentials:</label>
-                <br />
-                <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                  e.preventDefault();
-                  this.setState({ showImport: !showImport });
-                }}>Add Credential</button>
-                {showImport && (
-                  <div>
-                    <input
-                      type="text"
-                      placeholder={example}
-                      value={importCredential}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                        this.setState({ importCredential: e.target.value });
-                      }}
-                      style={{ width: '60%' }} />
-                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ importCredential: '' });
-                    }}>Reset</button>
-                    <button onClick={this.pasteCredential}>Paste</button>
-                    <button onClick={this.handleImportClose}>OK</button>
-                  </div>
-                )}
-                <div className='table-container'>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>allowCredentials</th>
-                        <th>username</th>
-                        <th>action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {storedCredentials.map((credential) => (
-                        <tr key={credential.id}>
-                          <td>
-                            <input type="checkbox"
-                              value={credential.id}
-                              checked={this.isCredentialSelected(credential.id)}
-                              onChange={this.handleAllowCredentialsChange}
-                            />
-                          </td>
-                          <td>{credential.username}</td>
-                          <td>
-                            <button id={'del.' + credential.id} onClick={this.deleteCredential}>Delete</button>
-                            <button id={'cpy.' + credential.id} onClick={this.copyCredential}>Copy</button>
-                            {showCopiedMessage && 'Copied'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
                 <div>
                   <label> Username: </label>
                   <input type="text"
@@ -265,7 +301,7 @@ class Home extends Component<{}, HomeState> {
               </form>
               <div>
                 <br />
-                <label>No Passkey?</label>
+                <h1>Register</h1>
                 <form onSubmit={this.handleRegister}>
                   <div>
                     <label> UserId: </label>

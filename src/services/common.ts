@@ -4,7 +4,7 @@ interface Logger {
 
 let __logger: Logger = {
   log: (msg: string) => {
-    console.log(msg);
+    console.info(msg);
   }
 };
 

@@ -6,7 +6,7 @@ import { getLogger } from '../services/common';
 
 const registerData: Map<string, CredentialCreationOptions> = new Map();
 
-export function initRegistration(rpId: string, userId: string, username: string): CredentialCreationOptions {
+export function initRegistration(rpId: string, userId: string, username: string, excludeCredentials: PublicKeyCredentialDescriptor[]): CredentialCreationOptions {
   const challenge = new Uint8Array(32);
   crypto.getRandomValues(challenge);
   const options: CredentialCreationOptions = {
@@ -21,6 +21,7 @@ export function initRegistration(rpId: string, userId: string, username: string)
         displayName: username,
       },
       challenge: challenge,
+      excludeCredentials: excludeCredentials,
       pubKeyCredParams: [
         { type: 'public-key', alg: -257 }, { type: 'public-key', alg: -7 }
       ],
@@ -53,7 +54,7 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
   getLogger().log('clientDataObj=' + decodedClientData);
 
   const attestationObj = cbor.decode(new Uint8Array(attestationObject));
-  console.log('attestation=%o', attestationObj);
+  console.info('attestation=%o', attestationObj);
   getLogger().log('attestationObject.fmt=' + attestationObj.fmt);
 
   const { challenge } = clientDataObj;
@@ -73,12 +74,12 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
   }
 
   const parsedAuthData = authData.parseAuthenticatorData(new Uint8Array(attestationResponse.getAuthenticatorData()));
-  console.log('authData=%o', parsedAuthData);
+  console.info('authData=%o', parsedAuthData);
 
   let publicKeyJwk;
   if (parsedAuthData.credentialPublicKey) {
     const publicKeyCose = authData.decodeFirst<authData.COSEPublicKey>(parsedAuthData.credentialPublicKey);
-    console.log('publicKeyCose=%o', publicKeyCose);
+    console.info('publicKeyCose=%o', publicKeyCose);
     const coseKty = publicKeyCose.get(authData.COSEKEYS.kty);
     const coseKeyAlg = publicKeyCose.get(authData.COSEKEYS.alg);
 
