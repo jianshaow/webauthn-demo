@@ -4,7 +4,7 @@ import * as reg from '../services/register';
 import * as authn from '../services/authenticate';
 import { CredentialEntity } from '../services/types';
 import { setLogger } from '../services/common';
-import { getCredentials, deleteCredential, saveCredential } from '../services/credential';
+import { getCredentials, deleteCredential, saveCredential, getCredential } from '../services/credential';
 import './Home.css';
 
 interface HomeState {
@@ -17,6 +17,7 @@ interface HomeState {
   displayName: string;
   rpId: string;
   showImport: boolean;
+  showCopiedMessage: boolean;
   importCredential: string;
 }
 
@@ -29,6 +30,7 @@ const defaultState = {
   rpId: window.location.host.split(':')[0],
   displayName: 'John Smith',
   showImport: false,
+  showCopiedMessage: false,
   importCredential: ''
 }
 
@@ -83,8 +85,19 @@ class Home extends Component<{}, HomeState> {
   };
 
   deleteCredential = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     const newCredentials = deleteCredential((e.target as HTMLButtonElement).id);
     this.setState({ storedCredentials: newCredentials });
+  };
+
+  copyCredential = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const credential = getCredential((e.target as HTMLButtonElement).id);
+    navigator.clipboard.writeText(JSON.stringify(credential));
+    this.setState({ showCopiedMessage: true });
+    setTimeout(() => {
+      this.setState({ showCopiedMessage: false });
+    }, 2000);
   };
 
   regenUserId = (e: MouseEvent<HTMLButtonElement>) => {
@@ -189,7 +202,7 @@ class Home extends Component<{}, HomeState> {
   };
 
   render() {
-    const { loggedIn, userId, username, storedCredentials, displayName, rpId, log, showImport } = this.state;
+    const { loggedIn, userId, username, storedCredentials, displayName, rpId, log, showImport, showCopiedMessage } = this.state;
     const example = '{"id":"","userId":"","username":"","displayName":"","rpId":"","publicKey":"","publicKeyAlgorithm":-7}';
     return (
       <div className="container">
@@ -238,6 +251,8 @@ class Home extends Component<{}, HomeState> {
                           <td>{credential.username}</td>
                           <td>
                             <button id={credential.id} onClick={this.deleteCredential}>delete</button>
+                            <button id={credential.id} onClick={this.copyCredential}>copy</button>
+                            {showCopiedMessage && 'Copied'}
                           </td>
                         </tr>
                       ))}
