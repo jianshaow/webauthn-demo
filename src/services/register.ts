@@ -4,6 +4,7 @@ import * as helper from '../helpers/authData';
 import * as cred from '../services/credential';
 import * as types from '../types/authData';
 import { getLogger } from '../services/common';
+import { CredentialEntity } from '../types/entities';
 
 const registerData: Map<string, CredentialCreationOptions> = new Map();
 
@@ -37,7 +38,7 @@ export function initRegistration(rpId: string, userId: string, username: string,
   return options;
 }
 
-export function finishRegistration(credential: PublicKeyCredential, rpId: string, userId: string, username: string, displayName: string) {
+export function finishRegistration(credential: PublicKeyCredential, rpId: string, userId: string, username: string, displayName: string): CredentialEntity {
   getLogger().log('credential.id=' + credential.id);
   getLogger().log('credential.type=' + credential.type);
   getLogger().log('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
@@ -49,13 +50,12 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
   getLogger().log('attestation.publicKeyAlgorithm=' + publicKeyAlgorithm);
   getLogger().log('attestation.transports=' + transports);
 
-  const pubclicKeyDer = attestationResponse.getPublicKey();
+  const pubclicKey = attestationResponse.getPublicKey();
 
-  if (!pubclicKeyDer) {
+  if (!pubclicKey) {
     throw new Error('no public key');
   }
-  const publicKey = utils.bufferToBase64URLString(pubclicKeyDer);
-  getLogger().log('attestation.pubclicKey=' + publicKey);
+  const publicKeyDer = utils.bufferToBase64URLString(pubclicKey);
 
   const { clientDataJSON, attestationObject } = attestationResponse;
 
@@ -70,7 +70,7 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
 
   const { publicKeyJwk, coseKeyAlg } = handleAuthData(authData);
 
-  const credentialToBeStored = {
+  const credentialToBeStored: CredentialEntity = {
     id: credential.id,
     type: credential.type as PublicKeyCredentialType,
     userId: userId,
@@ -78,7 +78,7 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
     displayName: displayName,
     rpId: rpId,
     transports: transports,
-    publicKey: publicKey,
+    publicKeyDer: publicKeyDer,
     publicKeyJwk: publicKeyJwk,
     publicKeyAlgorithm: coseKeyAlg as number,
   };
@@ -88,7 +88,7 @@ export function finishRegistration(credential: PublicKeyCredential, rpId: string
   return credentialToBeStored;
 }
 
-function handleAuthData(authData: Uint8Array) {
+function handleAuthData(authData: Uint8Array): { publicKeyJwk: any, coseKeyAlg: number } {
   const parsedAuthData = helper.parseAuthenticatorData(authData);
   console.info('parsedAuthData=%o', parsedAuthData);
 
@@ -105,6 +105,10 @@ function handleAuthData(authData: Uint8Array) {
   console.info('publicKeyCose=%o', publicKeyCose);
   const coseKty = publicKeyCose.get(types.COSEKEYS.kty);
   const coseKeyAlg = publicKeyCose.get(types.COSEKEYS.alg);
+
+  if (!coseKty || !coseKeyAlg) {
+    throw new Error('no COSE kty or COSE keyAlg');
+  }
 
   let publicKeyJwk;
   if (coseKty === types.COSEKTY.EC2) {
@@ -163,7 +167,14 @@ function handleClientData(clientDataJSON: ArrayBuffer, rpId: string, userId: str
   return clientDataObj;
 }
 
-function handleAttStmt(fmt: string, attStmt: Uint8Array) {
+function handleAttStmt(fmt: string, attStmt: any) {
   getLogger().log('attestationObject.fmt=' + fmt);
+  if (fmt === 'tpm') {
+    getLogger().log('attStmt.ver=' + attStmt.ver);
+    getLogger().log('attStmt.alg=' + attStmt.alg);
+  }
+  else if (fmt === 'apple') {
+    getLogger().log('attStmt=' + JSON.stringify(attStmt));
+  }
 }
 

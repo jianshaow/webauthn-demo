@@ -25,6 +25,27 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
 
   const { authenticatorData, signature, clientDataJSON, userHandle } = credential.response as AuthenticatorAssertionResponse;
 
+  if (!userHandle) {
+    throw new Error('no user id');
+  }
+
+  const { registeredCredential } = handleClientData(clientDataJSON, userHandle, credential.id);
+
+  const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
+  const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
+
+  const publicKey = await importPublicKey(registeredCredential);
+
+  const valid = await verifySignature(registeredCredential.publicKeyAlgorithm, publicKey, signature, signatureBase);
+
+  if (!valid) {
+    throw new Error('Invalid signature');
+  }
+
+  return registeredCredential;
+}
+
+function handleClientData(clientDataJSON: ArrayBuffer, userHandle: ArrayBuffer, credentialId: string): { clientDataObj: any, registeredCredential: CredentialEntity } {
   const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
   const clientDataObj = JSON.parse(decodedClientData);
   console.info('clientData=%o', clientDataObj);
@@ -38,20 +59,16 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
     throw new Error('no credential related to the challenge');
   }
 
-  if (!userHandle) {
-    throw new Error('no user id');
-  }
-
   const userId = utils.bufferToUTF8String(userHandle);
   getLogger().log('userhandle=' + userId);
 
   const storedCredentials = cred.getCredentials();
   const filteredCredentials = storedCredentials.filter(
-    (candidateCredential) => candidateCredential.userId === userId && candidateCredential.id === credential.id
+    (candidateCredential) => candidateCredential.userId === userId && candidateCredential.id === credentialId
   );
 
   if (!filteredCredentials.length) {
-    throw new Error('no stored credential matched by id=' + credential.id + ' and userId=' + userId);
+    throw new Error('no stored credential matched by id=' + credentialId + ' and userId=' + userId);
   }
   const registeredCredential = filteredCredentials[0];
 
@@ -61,9 +78,11 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
     }
   }
 
-  // prepare algorithm
-  const algorithm = registeredCredential.publicKeyAlgorithm;
-  const getImportAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
+  return { clientDataObj, registeredCredential };
+}
+
+async function importPublicKey(registeredCredential: CredentialEntity): Promise<CryptoKey> {
+  const getAlgorithm = (algorithm: number): RsaHashedImportParams | EcKeyImportParams | AlgorithmIdentifier => {
     if (algorithm === -7) { // for iOS
       return { name: 'ECDSA', namedCurve: 'P-256' };
     } else if (algorithm === -257) { // for Windows
@@ -71,8 +90,24 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
     } else {
       return 'ECDSA';
     }
-  }
-  const getVerifyAlgorithm = (algorithm: number): RsaPssParams | EcdsaParams | AlgorithmIdentifier => {
+  };
+
+  const { publicKeyJwk, publicKeyAlgorithm } = registeredCredential;
+  getLogger().log('publicKeyJwk=' + JSON.stringify(publicKeyJwk));
+
+  const publicKey = await crypto.subtle.importKey(
+    'jwk',
+    publicKeyJwk,
+    getAlgorithm(publicKeyAlgorithm),
+    true,
+    ['verify']
+  );
+
+  return publicKey;
+}
+
+async function verifySignature(algorithm: number, publicKey: CryptoKey, signature: ArrayBuffer, signatureBase: Uint8Array): Promise<boolean> {
+  const getAlgorithm = (algorithm: number): RsaPssParams | EcdsaParams | AlgorithmIdentifier => {
     if (algorithm === -7) { // for iOS
       return { name: 'ECDSA', hash: { name: 'SHA-256' } };
     } else if (algorithm === -257) { // for Windows
@@ -80,42 +115,13 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
     } else {
       return 'ECDSA';
     }
-  }
+  };
 
-  // prepare signature base
-  const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
-  const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
-
-  // prepare public key
-  // const publicKeyDer = utils.base64URLStringToBuffer(registeredCredential.publicKey);
-  // const publicKey = await crypto.subtle.importKey(
-  //   'spki',
-  //   publicKeyDer,
-  //   getImportAlgorithm(algorithm),
-  //   true,
-  //   ['verify']
-  // );
-  const publicKeyJwk = registeredCredential.publicKeyJwk;
-  getLogger().log('publicKeyJwk=' + JSON.stringify(publicKeyJwk));
-  const publicKey = await crypto.subtle.importKey(
-    'jwk',
-    publicKeyJwk,
-    getImportAlgorithm(algorithm),
-    false,
-    ['verify']
-  );
-
-  // verify signature
   const valid = await crypto.subtle.verify(
-    getVerifyAlgorithm(algorithm),
+    getAlgorithm(algorithm),
     publicKey,
     signature,
     signatureBase
   );
-
-  if (!valid) {
-    throw new Error('Invalid signature');
-  }
-
-  return registeredCredential;
+  return valid;
 }

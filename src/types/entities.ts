@@ -6,7 +6,7 @@ export interface CredentialEntity {
     displayName: string;
     rpId: string;
     transports: AuthenticatorTransport[];
-    publicKey: string;
+    publicKeyDer: string;
     publicKeyJwk: any;
     publicKeyAlgorithm: number;
   }
