@@ -241,10 +241,10 @@ class Home extends Component<{}, HomeState> {
                 <table>
                   <thead>
                     <tr>
-                      <th>Eexclude Credentials </th>
+                      <th>Exclude Credentials </th>
                       <th>Allow Credentials</th>
-                      <th>username</th>
-                      <th>action</th>
+                      <th>Username</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
