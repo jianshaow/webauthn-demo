@@ -1,4 +1,5 @@
 import * as utils from '../helpers/utils';
+import * as helper from '../helpers/authData';
 import * as cred from './credential';
 import { getLogger } from '../services/common';
 import { CredentialEntity } from '../types/entities';
@@ -30,6 +31,8 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
   }
 
   const { registeredCredential } = handleClientData(clientDataJSON, userHandle, credential.id);
+
+  handleAuthData(new Uint8Array(authenticatorData));
 
   const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
   const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
@@ -79,6 +82,15 @@ function handleClientData(clientDataJSON: ArrayBuffer, userHandle: ArrayBuffer, 
   }
 
   return { clientDataObj, registeredCredential };
+}
+
+function handleAuthData(authData: Uint8Array) {
+  const parsedAuthData = helper.parseAuthenticatorData(authData);
+  console.info('parsedAuthData=%o', parsedAuthData);
+
+  const { counter, flags } = parsedAuthData;
+  getLogger().log('authData.counter=' + counter);
+  getLogger().log('authData.flags=' + JSON.stringify(flags));
 }
 
 async function importPublicKey(registeredCredential: CredentialEntity): Promise<CryptoKey> {

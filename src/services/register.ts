@@ -177,4 +177,3 @@ function handleAttStmt(fmt: string, attStmt: any) {
     getLogger().log('attStmt=' + JSON.stringify(attStmt));
   }
 }
-
