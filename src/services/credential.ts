@@ -1,4 +1,4 @@
-import { CredentialEntity } from "./types";
+import { CredentialEntity } from "../types/entities";
 
 export function saveCredential(credential: CredentialEntity): CredentialEntity[] {
   const credentialsJson = localStorage.getItem('credentials');

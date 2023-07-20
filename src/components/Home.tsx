@@ -2,7 +2,7 @@ import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
 import * as utils from '../helpers/utils';
 import * as reg from '../services/register';
 import * as authn from '../services/authenticate';
-import { CredentialEntity } from '../services/types';
+import { CredentialEntity } from '../types/entities';
 import { setLogger } from '../services/common';
 import { getCredentials, deleteCredential, saveCredential, getCredential } from '../services/credential';
 import './Home.css';
@@ -98,12 +98,6 @@ class Home extends Component<{}, HomeState> {
     }, 2000);
   };
 
-  pasteCredential = async (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const credentialJson = await navigator.clipboard.readText();
-    this.setState({ importCredential: credentialJson });
-  }
-
   handleExcludeCredentialsChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { excludeCredentials, storedCredentials } = this.state;
     if (e.target.checked) {
@@ -155,14 +149,10 @@ class Home extends Component<{}, HomeState> {
       const createCredentialOptions = reg.initRegistration(rpId, userId, username, excludeCredentials);
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
-      this.log('credential.id=' + credential.id);
-      this.log('credential.type=' + credential.type);
-      this.log('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
 
       // finish register to save credential
       const credentialToBeStored = reg.finishRegistration(credential, rpId, userId, username, displayName);
       storedCredentials.push(credentialToBeStored);
-      this.log('credentialStored=' + JSON.stringify(credentialToBeStored));
 
       this.log('Register success');
     } catch (error) {
@@ -187,8 +177,6 @@ class Home extends Component<{}, HomeState> {
       const getCredentialOptions = authn.initAuthentication(allowCredentials);
 
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
-      this.log('credential.id=' + credential.id);
-      this.log('credential.type=' + credential.type);
 
       // finish authentication for a credential
       const registeredCredential = await authn.finishAuthentication(credential);
@@ -209,7 +197,7 @@ class Home extends Component<{}, HomeState> {
 
   render() {
     const { loggedIn, userId, username, storedCredentials, importCredential, displayName, rpId, log, showImport, showCopiedMessage } = this.state;
-    const example = '{"id":"","userId":"","username":"","displayName":"","rpId":"","publicKey":"","publicKeyAlgorithm":-7}';
+    const example = 'can be copied from stored credential via click copy button';
     return (
       <div className="container">
         <div className="center">
@@ -242,7 +230,10 @@ class Home extends Component<{}, HomeState> {
                     e.preventDefault();
                     this.setState({ importCredential: '' });
                   }}>Reset</button>
-                  <button onClick={this.pasteCredential}>Paste</button>
+                  <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault();
+                    this.setState({ importCredential: await navigator.clipboard.readText() });
+                  }}>Paste</button>
                   <button onClick={this.handleImportClose}>OK</button>
                 </div>
               )}
@@ -250,8 +241,8 @@ class Home extends Component<{}, HomeState> {
                 <table>
                   <thead>
                     <tr>
-                      <th>excludeCredentials </th>
-                      <th>allowCredentials</th>
+                      <th>Eexclude Credentials </th>
+                      <th>Allow Credentials</th>
                       <th>username</th>
                       <th>action</th>
                     </tr>
@@ -293,9 +284,17 @@ class Home extends Component<{}, HomeState> {
                     onChange={(e: ChangeEvent<HTMLInputElement>) => {
                       this.setState({ username: e.target.value });
                     }}
-                    style={{ width: '160px' }}
+                    style={{ width: '180px' }}
                     autoComplete='username webauthn'
                   />
+                  <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault();
+                    this.setState({ username: defaultState.username });
+                  }}>Reset</button>
+                  <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault();
+                    this.setState({ username: await navigator.clipboard.readText() });
+                  }}>Paste</button>
                 </div>
                 <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
               </form>
@@ -306,6 +305,14 @@ class Home extends Component<{}, HomeState> {
                   <div>
                     <label> UserId: </label>
                     <input type="text" value={userId} readOnly style={{ width: '260px' }} />
+                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      this.setState({ userId: defaultState.userId });
+                    }}>Reset</button>
+                    <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      this.setState({ userId: await navigator.clipboard.readText() });
+                    }}>Paste</button>
                     <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
                       e.preventDefault();
                       this.setState({ userId: utils.generateUUID() });
@@ -320,12 +327,28 @@ class Home extends Component<{}, HomeState> {
                       }}
                       style={{ width: '160px' }}
                     />
+                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      this.setState({ displayName: defaultState.displayName });
+                    }}>Reset</button>
+                    <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      this.setState({ displayName: await navigator.clipboard.readText() });
+                    }}>Paste</button>
                   </div>
                   <div>
                     <label>RPId: </label>
                     <input type="text" value={rpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
                       this.setState({ rpId: e.target.value });
                     }} />
+                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      this.setState({ rpId: defaultState.rpId });
+                    }}>Reset</button>
+                    <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+                      e.preventDefault();
+                      this.setState({ rpId: await navigator.clipboard.readText() });
+                    }}>Paste</button>
                   </div>
                   <div>
                     <button type="submit">Register Passkey</button>

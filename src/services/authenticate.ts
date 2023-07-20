@@ -1,7 +1,7 @@
 import * as utils from '../helpers/utils';
 import * as cred from './credential';
 import { getLogger } from '../services/common';
-import { CredentialEntity } from './types'
+import { CredentialEntity } from '../types/entities';
 
 const authnData: Map<string, CredentialRequestOptions> = new Map();
 
@@ -20,6 +20,9 @@ export function initAuthentication(allowCredentials: PublicKeyCredentialDescript
 }
 
 export async function finishAuthentication(credential: PublicKeyCredential): Promise<CredentialEntity> {
+  getLogger().log('credential.id=' + credential.id);
+  getLogger().log('credential.type=' + credential.type);
+
   const { authenticatorData, signature, clientDataJSON, userHandle } = credential.response as AuthenticatorAssertionResponse;
 
   const decodedClientData = utils.bufferToUTF8String(clientDataJSON);
