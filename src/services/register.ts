@@ -174,7 +174,6 @@ function handleAttStmt(fmt: string, attStmt: any) {
     getLogger().log('attStmt.alg=' + attStmt.alg);
   }
   else if (fmt === 'apple') {
-    getLogger().log('attStmt=' + JSON.stringify(attStmt));
+    // TODO
   }
-  getLogger().log('attStmt=' + JSON.stringify(attStmt));
 }

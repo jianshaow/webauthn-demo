@@ -129,6 +129,10 @@ async function verifySignature(algorithm: number, publicKey: CryptoKey, signatur
     }
   };
 
+  if (algorithm === -7) {
+    signature = utils.unwrapEC2Signature(new Uint8Array(signature));
+  }
+
   const valid = await crypto.subtle.verify(
     getAlgorithm(algorithm),
     publicKey,

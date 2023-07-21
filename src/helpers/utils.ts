@@ -1,3 +1,6 @@
+import { ECDSASigValue } from '@peculiar/asn1-ecc';
+import { AsnParser } from '@peculiar/asn1-schema';
+
 export function bufferToUTF8String(value: ArrayBuffer): string {
   return new TextDecoder('utf-8').decode(value);
 }
@@ -59,4 +62,12 @@ export function generateUUID(): string {
   const hex = Array.from(array, byte => byte.toString(16).padStart(2, '0'));
   const uuid = `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`;
   return uuid;
+}
+
+export function unwrapEC2Signature(signature: Uint8Array): Uint8Array {
+  const parsedSignature = AsnParser.parse(signature, ECDSASigValue);
+  let rBytes = new Uint8Array(parsedSignature.r);
+  let sBytes = new Uint8Array(parsedSignature.s);
+  const finalSignature = concat([rBytes, sBytes]);
+  return finalSignature;
 }
