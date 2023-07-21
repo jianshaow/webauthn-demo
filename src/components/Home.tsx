@@ -157,8 +157,8 @@ class Home extends Component<{}, HomeState> {
       this.log('Register success');
     } catch (error) {
       console.error(error);
-      alert('Register fail: ' + (error as Error).message);
       this.log('Error=' + error);
+      alert('Register fail: ' + (error as Error).message);
     }
 
     this.setState({ storedCredentials: storedCredentials });
@@ -190,8 +190,8 @@ class Home extends Component<{}, HomeState> {
       });
     } catch (error) {
       console.error(error);
-      alert('Login fail: ' + (error as Error).message);
       this.log('Error=' + error);
+      alert('Login fail: ' + (error as Error).message);
     }
   };
 
@@ -361,17 +361,27 @@ class Home extends Component<{}, HomeState> {
         <div className="divider" />
         <div className="center">
           <LogViewer log={log} />
+          <div>
+            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ log: '' });
+            }}>Clear</button>
+            <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              navigator.clipboard.writeText(log);
+            }}>Copy</button>
+          </div>
         </div>
       </div>
     );
   }
 }
 
-interface LogViewerState {
+interface LogViewerProps {
   log: string;
 }
 
-class LogViewer extends Component<LogViewerState> {
+class LogViewer extends Component<LogViewerProps> {
   logRef = React.createRef<HTMLTextAreaElement>();
 
   componentDidUpdate() {
