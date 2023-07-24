@@ -68,6 +68,16 @@ export function unwrapEC2Signature(signature: Uint8Array): Uint8Array {
   const parsedSignature = AsnParser.parse(signature, ECDSASigValue);
   let rBytes = new Uint8Array(parsedSignature.r);
   let sBytes = new Uint8Array(parsedSignature.s);
+  if (shouldRemoveLeadingZero(rBytes)) {
+    rBytes = rBytes.slice(1);
+  }
+  if (shouldRemoveLeadingZero(sBytes)) {
+    sBytes = sBytes.slice(1);
+  }
   const finalSignature = concat([rBytes, sBytes]);
   return finalSignature;
+}
+
+function shouldRemoveLeadingZero(bytes: Uint8Array): boolean {
+  return bytes[0] === 0x0 && (bytes[1] & (1 << 7)) !== 0;
 }
