@@ -43,7 +43,8 @@ const defaultState = {
 
 class Home extends Component<{}, HomeState> {
 
-  autofillAbortController: AbortController = new AbortController();
+  autofillAbortController: AbortController | undefined = undefined;
+  autofillPending = false;
 
   constructor(props: {}) {
     super(props);
@@ -189,6 +190,10 @@ class Home extends Component<{}, HomeState> {
       this.log('username=' + username);
       this.log('storedCredentials.length=' + storedCredentials.length);
 
+      if (this.autofillPending && this.autofillAbortController) {
+        this.autofillAbortController.abort('explicit.login');
+      }
+
       // initialize authentication for get options
       const publicKey = authn.initAuthentication(allowCredentials);
       const getCredentialOptions = { publicKey: publicKey };
@@ -213,18 +218,25 @@ class Home extends Component<{}, HomeState> {
   };
 
   handleAutofill = async (e: SyntheticEvent<HTMLInputElement>) => {
-    this.log('username is selected: ' + (e.target as HTMLInputElement).value);
     const { allowCredentials } = this.state;
 
     try {
+      if (this.autofillPending) {
+        this.log('There is a autofill request on pending');
+        return;
+      }
+      this.log('Start autofill login...');
 
       // initialize authentication for get options
       const publicKey = authn.initAuthentication(allowCredentials);
-      const getCredentialOptions: CredentialRequestOptions = { publicKey: publicKey, mediation: 'conditional' };
+      this.autofillAbortController = new AbortController();
+      const getCredentialOptions: CredentialRequestOptions = {
+        publicKey: publicKey,
+        mediation: 'conditional',
+        signal: this.autofillAbortController.signal
+      };
 
-      // this.autofillAbortController = new AbortController();
-      // getCredentialOptions.signal = this.autofillAbortController.signal;
-
+      this.autofillPending = true;
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
 
       // finish authentication for a credential
@@ -240,13 +252,14 @@ class Home extends Component<{}, HomeState> {
     } catch (error) {
       console.error(error);
       this.log('Error=' + error);
-      alert('Login fail: ' + (error as Error).message);
-    }
-  }
 
-  handleCancelAutofill = async (e: SyntheticEvent<HTMLInputElement>) => {
-    this.log('username lose focus: ' + (e.target as HTMLInputElement).value);
-    // this.autofillAbortController.abort('user cancel the autofill');
+      if (error === 'explicit.login') {
+        this.log('Autofill login canceled by ' + error);
+      } else {
+        alert('Login fail: ' + (error as Error).message);
+      }
+    }
+    this.autofillPending = false;
   }
 
   render() {
@@ -343,7 +356,6 @@ class Home extends Component<{}, HomeState> {
                     style={{ width: '180px' }}
                     autoComplete='username webauthn'
                     onSelect={this.handleAutofill}
-                    onBlur={this.handleCancelAutofill}
                   />
                   <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
                     e.preventDefault();
