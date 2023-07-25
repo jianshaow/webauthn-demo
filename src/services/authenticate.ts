@@ -4,17 +4,15 @@ import * as cred from './credential';
 import { getLogger } from '../services/common';
 import { CredentialEntity } from '../types/entities';
 
-const authnData: Map<string, CredentialRequestOptions> = new Map();
+const authnData: Map<string, PublicKeyCredentialRequestOptions> = new Map();
 
-export function initAuthentication(allowCredentials: PublicKeyCredentialDescriptor[]): CredentialRequestOptions {
+export function initAuthentication(allowCredentials: PublicKeyCredentialDescriptor[]): PublicKeyCredentialRequestOptions {
   const challenge = new Uint8Array(32);
   crypto.getRandomValues(challenge);
-  const options: CredentialRequestOptions = {
-    publicKey: {
-      challenge: challenge,
-      allowCredentials: allowCredentials,
-      userVerification: 'preferred',
-    }
+  const options: PublicKeyCredentialRequestOptions = {
+    challenge: challenge,
+    allowCredentials: allowCredentials,
+    userVerification: 'preferred',
   };
   authnData.set(utils.bufferToBase64URLString(challenge), options);
   return options;
@@ -75,10 +73,8 @@ function handleClientData(clientDataJSON: ArrayBuffer, userHandle: ArrayBuffer, 
   }
   const registeredCredential = filteredCredentials[0];
 
-  if (options.publicKey) {
-    if (!origin.endsWith(registeredCredential.rpId)) {
-      throw new Error('rpId mismatch origin');
-    }
+  if (!origin.endsWith(registeredCredential.rpId)) {
+    throw new Error('rpId mismatch origin');
   }
 
   return { clientDataObj, registeredCredential };

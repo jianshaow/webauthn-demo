@@ -6,39 +6,49 @@ import * as types from '../types/authData';
 import { getLogger } from '../services/common';
 import { CredentialEntity } from '../types/entities';
 
-const registerData: Map<string, CredentialCreationOptions> = new Map();
+const registerData: Map<string, PublicKeyCredentialCreationOptions> = new Map();
 
-export function initRegistration(rpId: string, userId: string, username: string, excludeCredentials: PublicKeyCredentialDescriptor[]): CredentialCreationOptions {
+export function initRegistration(
+  rpId: string,
+  userId: string,
+  username: string,
+  displayName: string,
+  excludeCredentials: PublicKeyCredentialDescriptor[]
+): PublicKeyCredentialCreationOptions {
   const challenge = new Uint8Array(32);
   crypto.getRandomValues(challenge);
-  const options: CredentialCreationOptions = {
-    publicKey: {
-      rp: {
-        id: rpId,
-        name: 'AA Server',
-      },
-      user: {
-        id: new TextEncoder().encode(userId),
-        name: username,
-        displayName: username,
-      },
-      challenge: challenge,
-      excludeCredentials: excludeCredentials,
-      pubKeyCredParams: [
-        { type: 'public-key', alg: -257 }, { type: 'public-key', alg: -7 }
-      ],
-      authenticatorSelection: {
-        authenticatorAttachment: 'platform',
-        userVerification: 'preferred',
-      },
-      attestation: 'direct',
+  const options: PublicKeyCredentialCreationOptions = {
+    rp: {
+      id: rpId,
+      name: 'AA Server',
     },
+    user: {
+      id: new TextEncoder().encode(userId),
+      name: username,
+      displayName: displayName,
+    },
+    challenge: challenge,
+    excludeCredentials: excludeCredentials,
+    pubKeyCredParams: [
+      { type: 'public-key', alg: -257 }, { type: 'public-key', alg: -7 }
+    ],
+    authenticatorSelection: {
+      authenticatorAttachment: 'platform',
+      userVerification: 'preferred',
+    },
+    attestation: 'direct',
   };
   registerData.set(utils.bufferToBase64URLString(challenge), options);
   return options;
 }
 
-export function finishRegistration(credential: PublicKeyCredential, rpId: string, userId: string, username: string, displayName: string): CredentialEntity {
+export function finishRegistration(
+  credential: PublicKeyCredential,
+  rpId: string,
+  userId: string,
+  username: string,
+  displayName: string
+): CredentialEntity {
   getLogger().log('credential.id=' + credential.id);
   getLogger().log('credential.type=' + credential.type);
   getLogger().log('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
@@ -154,14 +164,12 @@ function handleClientData(clientDataJSON: ArrayBuffer, rpId: string, userId: str
   if (!options) {
     throw new Error('no credential related to the challenge');
   }
-  if (options.publicKey) {
-    const publickey = options.publicKey;
-    if (publickey.rp.id !== rpId) {
-      throw new Error('rpId mismatch');
-    }
-    if (utils.bufferToUTF8String(publickey.user.id as ArrayBuffer) !== userId) {
-      throw new Error('userId mismatch');
-    }
+
+  if (options.rp.id !== rpId) {
+    throw new Error('rpId mismatch');
+  }
+  if (utils.bufferToUTF8String(options.user.id as ArrayBuffer) !== userId) {
+    throw new Error('userId mismatch');
   }
 
   return clientDataObj;
