@@ -253,7 +253,8 @@ class Home extends Component<{}, HomeState> {
       console.error(error);
       this.log('Error=' + error);
 
-      if (error === 'explicit.login') {
+
+      if (error === 'explicit.login' || (error as Object).constructor.name === 'AbortError') {
         this.log('Autofill login canceled by ' + error);
       } else {
         alert('Login fail: ' + (error as Error).message);
