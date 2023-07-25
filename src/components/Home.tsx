@@ -196,7 +196,7 @@ class Home extends Component<{}, HomeState> {
 
       // initialize authentication for get options
       const publicKey = authn.initAuthentication(allowCredentials);
-      const getCredentialOptions = { publicKey: publicKey };
+      const getCredentialOptions: CredentialRequestOptions = { publicKey: publicKey };
 
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
 
@@ -232,7 +232,7 @@ class Home extends Component<{}, HomeState> {
       this.autofillAbortController = new AbortController();
       const getCredentialOptions: CredentialRequestOptions = {
         publicKey: publicKey,
-        mediation: 'conditional',
+        mediation: 'conditional' as CredentialMediationRequirement,
         signal: this.autofillAbortController.signal
       };
 
