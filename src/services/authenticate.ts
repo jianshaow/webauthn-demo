@@ -21,6 +21,7 @@ export function initAuthentication(allowCredentials: PublicKeyCredentialDescript
 export async function finishAuthentication(credential: PublicKeyCredential): Promise<CredentialEntity> {
   getLogger().log('credential.id=' + credential.id);
   getLogger().log('credential.type=' + credential.type);
+  getLogger().log('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
 
   const { authenticatorData, signature, clientDataJSON, userHandle } = credential.response as AuthenticatorAssertionResponse;
 
