@@ -163,7 +163,7 @@ class Home extends Component<{}, HomeState> {
       this.log('userId=' + userId);
 
       if (this.autofillPending && this.autofillAbortController) {
-        this.autofillAbortController.abort('explicit.login');
+        this.autofillAbortController.abort('explicit.register');
       }
 
       // initialize register to get creation options
@@ -256,7 +256,9 @@ class Home extends Component<{}, HomeState> {
     } catch (error) {
       console.error(error);
       this.log('Error=' + error);
-      if (error === 'explicit.login' || (error as DOMException).name === 'AbortError') {
+      if (error === 'explicit.login' ||
+        error === 'explicit.register' ||
+        (error as DOMException).name === 'AbortError') {
         this.log('Autofill login canceled by ' + error);
       } else {
         alert('Login fail: ' + (error as Error).message);
@@ -266,7 +268,8 @@ class Home extends Component<{}, HomeState> {
   }
 
   render() {
-    const { loggedIn, userId, username, storedCredentials, importCredential, displayName, rpId, log, showImport, showCopiedMessage } = this.state;
+    const { loggedIn, userId, username, storedCredentials, importCredential,
+      displayName, rpId, log, showImport, showCopiedMessage } = this.state;
     const example = 'can be copied from stored credential via click copy button';
 
     return (
