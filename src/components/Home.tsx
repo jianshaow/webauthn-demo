@@ -162,6 +162,10 @@ class Home extends Component<{}, HomeState> {
       this.log('username=' + username);
       this.log('userId=' + userId);
 
+      if (this.autofillPending && this.autofillAbortController) {
+        this.autofillAbortController.abort('explicit.login');
+      }
+
       // initialize register to get creation options
       const publicKey = reg.initRegistration(rpId, userId, username, displayName, excludeCredentials);
       const createCredentialOptions: CredentialCreationOptions = { publicKey: publicKey }
