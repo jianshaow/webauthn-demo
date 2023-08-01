@@ -267,192 +267,230 @@ class Home extends Component<{}, HomeState> {
     this.autofillPending = false;
   }
 
-  render() {
-    const { loggedIn, userId, username, storedCredentials, importCredential,
-      displayName, rpId, log, showImport, showCopiedMessage } = this.state;
-    const example = 'can be copied from stored credential via click copy button';
-
+  renderLoggedIn() {
+    const { displayName } = this.state;
     return (
-      <div className="container">
-        <div className="center">
-          {loggedIn ? (
-            <div>
-              <h1>Wellcome, {displayName}!</h1>
-              <button onClick={() => {
-                this.setState({ ...defaultState, storedCredentials: getCredentials() });
-              }}>Logout</button>
-            </div>
-          ) : (
-            <div>
-              <h1>Stored Credentials:</h1>
-              <br />
-              <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                e.preventDefault();
-                this.setState({ showImport: !showImport });
-              }}>Add Credential</button>
-              {showImport && (
-                <div>
-                  <input
-                    type="text"
-                    placeholder={example}
-                    value={importCredential}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                      this.setState({ importCredential: e.target.value });
-                    }}
-                    style={{ width: '60%' }}
-                  />
-                  <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    this.setState({ importCredential: '' });
-                  }}>Reset</button>
-                  <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    this.setState({ importCredential: await navigator.clipboard.readText() });
-                  }}>Paste</button>
-                  <button onClick={this.handleImportClose}>OK</button>
-                </div>
-              )}
-              <div className='table-container'>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Exclude Credentials </th>
-                      <th>Allow Credentials</th>
-                      <th>Username</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {storedCredentials.map((credential) => (
-                      <tr key={credential.id}>
-                        <td>
-                          <input type="checkbox"
-                            value={credential.id}
-                            checked={this.isExcludeCredentialSelected(credential.id)}
-                            onChange={this.handleExcludeCredentialsChange}
-                          />
-                        </td>
-                        <td>
-                          <input type="checkbox"
-                            value={credential.id}
-                            checked={this.isAllowCredentialSelected(credential.id)}
-                            onChange={this.handleAllowCredentialsChange}
-                          />
-                        </td>
-                        <td>{credential.username}</td>
-                        <td>
-                          <button id={'del.' + credential.id} onClick={this.deleteCredential}>Delete</button>
-                          <button id={'cpy.' + credential.id} onClick={this.copyCredential}>Copy</button>
-                          {showCopiedMessage && 'Copied'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <h1>Login</h1>
-              <form onSubmit={this.handleLogin}>
-                <div>
-                  <label> Username: </label>
-                  <input type="text"
-                    value={username}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                      this.setState({ username: e.target.value });
-                    }}
-                    style={{ width: '180px' }}
-                    autoComplete='username webauthn'
-                    onSelect={this.handleAutofill}
-                  />
-                  <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    this.setState({ username: defaultState.username });
-                  }}>Reset</button>
-                  <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    this.setState({ username: await navigator.clipboard.readText() });
-                  }}>Paste</button>
-                </div>
-                <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
-              </form>
-              <div>
-                <br />
-                <h1>Register</h1>
-                <form onSubmit={this.handleRegister}>
-                  <div>
-                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ ...defaultUser });
-                    }}>Fill in Default User</button>
-                    <br />
-                    <label> DisplayName: </label>
-                    <input type="text"
-                      value={displayName}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                        this.setState({ displayName: e.target.value });
-                      }}
-                      style={{ width: '160px' }}
+      <div>
+        <h1>Wellcome, {displayName}!</h1>
+        <button onClick={() => {
+          this.setState({ ...defaultState, storedCredentials: getCredentials() });
+        }}>Logout</button>
+      </div>
+    );
+  }
+
+  renderStoredCredentials() {
+    const { storedCredentials, importCredential, showImport, showCopiedMessage } = this.state;
+    const hints = 'can be copied from stored credential via click copy button';
+    return (
+      <div>
+        <h1>Stored Credentials:</h1>
+        <br />
+        <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+          e.preventDefault();
+          this.setState({ showImport: !showImport });
+        }}>Add Credential</button>
+        {showImport && (
+          <div>
+            <input
+              type="text"
+              placeholder={hints}
+              value={importCredential}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                this.setState({ importCredential: e.target.value });
+              }}
+              style={{ width: '60%' }}
+            />
+            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ importCredential: '' });
+            }}>Reset</button>
+            <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ importCredential: await navigator.clipboard.readText() });
+            }}>Paste</button>
+            <button onClick={this.handleImportClose}>OK</button>
+          </div>
+        )}
+        <div className='table-container'>
+          <table>
+            <thead>
+              <tr>
+                <th>Exclude Credentials </th>
+                <th>Allow Credentials</th>
+                <th>Username</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {storedCredentials.map((credential) => (
+                <tr key={credential.id}>
+                  <td>
+                    <input type="checkbox"
+                      value={credential.id}
+                      checked={this.isExcludeCredentialSelected(credential.id)}
+                      onChange={this.handleExcludeCredentialsChange}
                     />
-                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ displayName: defaultState.displayName });
-                    }}>Reset</button>
-                    <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ displayName: await navigator.clipboard.readText() });
-                    }}>Paste</button>
-                  </div>
-                  <div>
-                    <label> UserId: </label>
-                    <input type="text" value={userId} readOnly style={{ width: '260px' }} />
-                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ userId: defaultState.userId });
-                    }}>Reset</button>
-                    <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ userId: await navigator.clipboard.readText() });
-                    }}>Paste</button>
-                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ userId: utils.generateUUID() });
-                    }}>Regen</button>
-                  </div>
-                  <div>
-                    <label>RPId: </label>
-                    <input type="text" value={rpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                      this.setState({ rpId: e.target.value });
-                    }} />
-                    <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ rpId: defaultState.rpId });
-                    }}>Reset</button>
-                    <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
-                      e.preventDefault();
-                      this.setState({ rpId: await navigator.clipboard.readText() });
-                    }}>Paste</button>
-                  </div>
-                  <div>
-                    <button type="submit">Register Passkey</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+                  </td>
+                  <td>
+                    <input type="checkbox"
+                      value={credential.id}
+                      checked={this.isAllowCredentialSelected(credential.id)}
+                      onChange={this.handleAllowCredentialsChange}
+                    />
+                  </td>
+                  <td>{credential.username}</td>
+                  <td>
+                    <button id={'del.' + credential.id} onClick={this.deleteCredential}>Delete</button>
+                    <button id={'cpy.' + credential.id} onClick={this.copyCredential}>Copy</button>
+                    {showCopiedMessage && 'Copied'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <div className="divider" />
-        <div className="center">
-          <LogViewer log={log} />
+      </div>
+    );
+  }
+
+  renderLogin() {
+    const { username, storedCredentials } = this.state;
+    return (
+      <div>
+        <h1>Login</h1>
+        <form onSubmit={this.handleLogin}>
+          <div>
+            <label> Username: </label>
+            <input type="text"
+              value={username}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                this.setState({ username: e.target.value });
+              }}
+              style={{ width: '180px' }}
+              autoComplete='username webauthn'
+              onSelect={this.handleAutofill}
+            />
+            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ username: defaultState.username });
+            }}>Reset</button>
+            <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ username: await navigator.clipboard.readText() });
+            }}>Paste</button>
+          </div>
+          <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
+        </form>
+      </div>
+    );
+  }
+
+  renderRegister() {
+    const { userId, displayName, rpId } = this.state;
+    return (
+      <div>
+        <br />
+        <h1>Register</h1>
+        <form onSubmit={this.handleRegister}>
           <div>
             <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
               e.preventDefault();
-              this.setState({ log: '' });
-            }}>Clear</button>
+              this.setState({ ...defaultUser });
+            }}>Fill in Default User</button>
+            <br />
+            <label> DisplayName: </label>
+            <input type="text"
+              value={displayName}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                this.setState({ displayName: e.target.value });
+              }}
+              style={{ width: '160px' }}
+            />
+            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ displayName: defaultState.displayName });
+            }}>Reset</button>
             <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
               e.preventDefault();
-              navigator.clipboard.writeText(log);
-            }}>Copy</button>
+              this.setState({ displayName: await navigator.clipboard.readText() });
+            }}>Paste</button>
           </div>
+          <div>
+            <label> UserId: </label>
+            <input type="text" value={userId} readOnly style={{ width: '260px' }} />
+            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ userId: defaultState.userId });
+            }}>Reset</button>
+            <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ userId: await navigator.clipboard.readText() });
+            }}>Paste</button>
+            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ userId: utils.generateUUID() });
+            }}>Regen</button>
+          </div>
+          <div>
+            <label>RPId: </label>
+            <input type="text" value={rpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              this.setState({ rpId: e.target.value });
+            }} />
+            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ rpId: defaultState.rpId });
+            }}>Reset</button>
+            <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ rpId: await navigator.clipboard.readText() });
+            }}>Paste</button>
+          </div>
+          <div>
+            <button type="submit">Register Passkey</button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  renderLog() {
+    const { log } = this.state;
+    return (
+      <div className="center">
+        <LogViewer log={log} />
+        <div>
+          <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault();
+            this.setState({ log: '' });
+          }}>Clear</button>
+          <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault();
+            navigator.clipboard.writeText(log);
+          }}>Copy</button>
         </div>
+      </div>
+    );
+  }
+
+  render() {
+    const { loggedIn } = this.state;
+    return (
+      <div className="container">
+        <div className="center">
+          {loggedIn ?
+            this.renderLoggedIn()
+            : (
+              <div>
+                {this.renderStoredCredentials()}
+                {this.renderLogin()}
+                {this.renderRegister()}
+              </div>
+            )
+          }
+        </div>
+        <div className="divider" />
+        {this.renderLog()}
       </div>
     );
   }
