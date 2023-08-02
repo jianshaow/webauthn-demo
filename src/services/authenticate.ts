@@ -68,6 +68,7 @@ function handleClientData(clientDataJSON: ArrayBuffer, userHandle: ArrayBuffer, 
   }
 
   const userId = utils.bufferToUTF8String(userHandle);
+  getLogger().log('userhandleBase64=' + utils.bufferToBase64URLString(userHandle));
   getLogger().log('userhandle=' + userId);
 
   const storedCredentials = cred.getCredentials();
