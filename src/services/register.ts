@@ -68,6 +68,8 @@ export function finishRegistration(
   const publicKeyDer = utils.bufferToBase64URLString(pubclicKey);
 
   const { clientDataJSON, attestationObject } = attestationResponse;
+  getLogger().log('clientDataJSONBase64=' + utils.bufferToBase64URLString(clientDataJSON));
+  getLogger().log('attestationObjectBase64=' + utils.bufferToBase64URLString(attestationObject));
 
   handleClientData(clientDataJSON, rpId, userId);
 
