@@ -34,7 +34,13 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
   handleAuthData(new Uint8Array(authenticatorData));
 
   const hashedClientData = await crypto.subtle.digest('SHA-256', clientDataJSON);
+  getLogger().log('clientDataJSONBase64=' + utils.bufferToBase64URLString(clientDataJSON));
+  getLogger().log('hashedClientDataBase64=' + utils.bufferToBase64URLString(hashedClientData));
+  getLogger().log('authenticatorDataBase64=' + utils.bufferToBase64URLString(authenticatorData));
+  getLogger().log('signatureBase64=' + utils.bufferToBase64URLString(signature));
+
   const signatureBase = utils.concat([new Uint8Array(authenticatorData), new Uint8Array(hashedClientData)]);
+  getLogger().log('signatureBaseBase64=' + utils.bufferToBase64URLString(signatureBase));
 
   const publicKey = await importPublicKey(registeredCredential);
 
