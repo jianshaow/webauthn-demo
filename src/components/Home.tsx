@@ -72,6 +72,20 @@ class Home extends Component<{}, HomeState> {
     this.setState(prevState => ({ log: prevState.log + logEntry + '\n' }));
   }
 
+  isAllowCredentialSelected(credentialId: string) {
+    const { allowCredentials } = this.state;
+    return allowCredentials.some(
+      (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
+    );
+  };
+
+  isExcludeCredentialSelected(credentialId: string) {
+    const { excludeCredentials } = this.state;
+    return excludeCredentials.some(
+      (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
+    );
+  };
+
   handleImportClose = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const { importCredential } = this.state;
@@ -81,20 +95,6 @@ class Home extends Component<{}, HomeState> {
     }
     const newCredentials = saveCredential(JSON.parse(importCredential));
     this.setState({ showImport: false, storedCredentials: newCredentials, importCredential: '' });
-  };
-
-  isAllowCredentialSelected = (credentialId: string) => {
-    const { allowCredentials } = this.state;
-    return allowCredentials.some(
-      (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
-    );
-  };
-
-  isExcludeCredentialSelected = (credentialId: string) => {
-    const { excludeCredentials } = this.state;
-    return excludeCredentials.some(
-      (selectedCredential) => utils.bufferToBase64URLString(selectedCredential.id as ArrayBuffer) === credentialId
-    );
   };
 
   deleteCredential = (e: MouseEvent<HTMLButtonElement>) => {
