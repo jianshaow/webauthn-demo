@@ -13,6 +13,7 @@ export function initRegistration(
   userId: string,
   username: string,
   displayName: string,
+  attestation: AttestationConveyancePreference,
   excludeCredentials: PublicKeyCredentialDescriptor[]
 ): PublicKeyCredentialCreationOptions {
   const challenge = new Uint8Array(32);
@@ -36,7 +37,7 @@ export function initRegistration(
       authenticatorAttachment: 'platform',
       userVerification: 'preferred',
     },
-    attestation: 'direct',
+    attestation: attestation,
   };
   registerData.set(utils.bufferToBase64URLString(challenge), options);
   return options;

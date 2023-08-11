@@ -18,6 +18,7 @@ interface HomeState {
   allowCredentials: PublicKeyCredentialDescriptor[];
   storedCredentials: CredentialEntity[];
   rpId: string;
+  attestation: string;
   showImport: boolean;
   showCopiedMessage: boolean;
   importCredential: string;
@@ -38,6 +39,7 @@ const defaultState = {
   excludeCredentials: [],
   allowCredentials: [],
   rpId: window.location.host.split(':')[0],
+  attestation: 'direct',
   showImport: false,
   showCopiedMessage: false,
   importCredential: ''
@@ -157,7 +159,7 @@ class Home extends Component<{}, HomeState> {
 
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, displayName, userId, rpId, storedCredentials, excludeCredentials } = this.state;
+    const { username, displayName, userId, rpId, attestation, storedCredentials, excludeCredentials } = this.state;
 
     try {
       this.log('Start register...');
@@ -169,7 +171,7 @@ class Home extends Component<{}, HomeState> {
       }
 
       // initialize register to get creation options
-      const publicKey = reg.initRegistration(rpId, userId, username, displayName, excludeCredentials);
+      const publicKey = reg.initRegistration(rpId, userId, username, displayName, attestation as AttestationConveyancePreference, excludeCredentials);
       const createCredentialOptions: CredentialCreationOptions = { publicKey: publicKey }
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
@@ -287,11 +289,12 @@ class Home extends Component<{}, HomeState> {
     return (
       <div>
         <h1>Stored Credentials:</h1>
-        <br />
-        <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-          e.preventDefault();
-          this.setState({ showImport: !showImport });
-        }}>Add Credential</button>
+        <div>
+          <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault();
+            this.setState({ showImport: !showImport });
+          }}>Add Credential</button>
+        </div>
         {showImport && (
           <div>
             <input
@@ -381,7 +384,8 @@ class Home extends Component<{}, HomeState> {
               e.preventDefault();
               this.setState({ username: await navigator.clipboard.readText() });
             }}>Paste</button>
-            <br />
+          </div>
+          <div>
             <label> UserVerification: </label>
             <select value={userVerification} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
               this.setState({ userVerification: e.target.value })
@@ -391,17 +395,18 @@ class Home extends Component<{}, HomeState> {
               <option key='required' value='required'>required</option>
             </select>
           </div>
-          <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
+          <div>
+            <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
+          </div>
         </form>
       </div>
     );
   }
 
   renderRegister() {
-    const { userId, displayName, rpId } = this.state;
+    const { userId, displayName, rpId, attestation } = this.state;
     return (
       <div>
-        <br />
         <h1>Register</h1>
         <form onSubmit={this.handleRegister}>
           <div>
@@ -409,7 +414,8 @@ class Home extends Component<{}, HomeState> {
               e.preventDefault();
               this.setState({ ...defaultUser });
             }}>Fill in Default User</button>
-            <br />
+          </div>
+          <div>
             <label> DisplayName: </label>
             <input type="text"
               value={displayName}
@@ -456,6 +462,17 @@ class Home extends Component<{}, HomeState> {
               e.preventDefault();
               this.setState({ rpId: await navigator.clipboard.readText() });
             }}>Paste</button>
+          </div>
+          <div>
+            <label> Attestation: </label>
+            <select value={attestation} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              this.setState({ attestation: e.target.value })
+            }}>
+              <option key='direct' value='direct'>direct</option>
+              <option key='enterprise' value='enterprise'>enterprise</option>
+              <option key='indirect' value='indirect'>indirect</option>
+              <option key='none' value='none'>none</option>
+            </select>
           </div>
           <div>
             <button type="submit">Register Passkey</button>
