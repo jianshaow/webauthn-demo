@@ -12,10 +12,11 @@ interface HomeState {
   loggedIn: boolean;
   userId: string;
   username: string;
+  displayName: string;
+  userVerification: string;
   excludeCredentials: PublicKeyCredentialDescriptor[];
   allowCredentials: PublicKeyCredentialDescriptor[];
   storedCredentials: CredentialEntity[];
-  displayName: string;
   rpId: string;
   showImport: boolean;
   showCopiedMessage: boolean;
@@ -33,6 +34,7 @@ const defaultState = {
   userId: '',
   username: '',
   displayName: '',
+  userVerification: 'preferred',
   excludeCredentials: [],
   allowCredentials: [],
   rpId: window.location.host.split(':')[0],
@@ -187,7 +189,7 @@ class Home extends Component<{}, HomeState> {
 
   handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, storedCredentials, allowCredentials } = this.state;
+    const { username, storedCredentials, allowCredentials, userVerification } = this.state;
 
     try {
       this.log('Start login...');
@@ -199,7 +201,7 @@ class Home extends Component<{}, HomeState> {
       }
 
       // initialize authentication for get options
-      const publicKey = authn.initAuthentication(allowCredentials);
+      const publicKey = authn.initAuthentication(allowCredentials, userVerification as UserVerificationRequirement);
       const getCredentialOptions: CredentialRequestOptions = { publicKey: publicKey };
 
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
@@ -222,7 +224,7 @@ class Home extends Component<{}, HomeState> {
   };
 
   handleAutofill = async (e: SyntheticEvent<HTMLInputElement>) => {
-    const { allowCredentials } = this.state;
+    const { allowCredentials, userVerification } = this.state;
 
     try {
       if (this.autofillPending) {
@@ -232,7 +234,7 @@ class Home extends Component<{}, HomeState> {
       this.log('Start autofill login...');
 
       // initialize authentication for get options
-      const publicKey = authn.initAuthentication(allowCredentials);
+      const publicKey = authn.initAuthentication(allowCredentials, userVerification as UserVerificationRequirement);
       this.autofillAbortController = new AbortController();
       const getCredentialOptions: CredentialRequestOptions = {
         publicKey: publicKey,
@@ -355,7 +357,7 @@ class Home extends Component<{}, HomeState> {
   }
 
   renderLogin() {
-    const { username, storedCredentials } = this.state;
+    const { username, userVerification, storedCredentials } = this.state;
     return (
       <div>
         <h1>Login</h1>
@@ -379,6 +381,15 @@ class Home extends Component<{}, HomeState> {
               e.preventDefault();
               this.setState({ username: await navigator.clipboard.readText() });
             }}>Paste</button>
+            <br />
+            <label> UserVerification: </label>
+            <select value={userVerification} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              this.setState({ userVerification: e.target.value })
+            }}>
+              <option key='discouraged' value='discouraged'>discouraged</option>
+              <option key='preferred' value='preferred'>preferred</option>
+              <option key='required' value='required'>required</option>
+            </select>
           </div>
           <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
         </form>
