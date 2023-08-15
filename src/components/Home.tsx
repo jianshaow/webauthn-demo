@@ -13,12 +13,15 @@ interface HomeState {
   userId: string;
   username: string;
   displayName: string;
-  userVerification: string;
+  authnUserVerification: string;
   excludeCredentials: PublicKeyCredentialDescriptor[];
   allowCredentials: PublicKeyCredentialDescriptor[];
   storedCredentials: CredentialEntity[];
   rpId: string;
+  residentKey: string;
   attestation: string;
+  regUserVerification: string;
+  authenticatorAttachment: string;
   showImport: boolean;
   showCopiedMessage: boolean;
   importCredential: string;
@@ -35,11 +38,14 @@ const defaultState = {
   userId: '',
   username: '',
   displayName: '',
-  userVerification: 'preferred',
+  authnUserVerification: 'preferred',
   excludeCredentials: [],
   allowCredentials: [],
   rpId: window.location.host.split(':')[0],
   attestation: 'direct',
+  residentKey: 'preferred',
+  regUserVerification: 'preferred',
+  authenticatorAttachment: 'platform',
   showImport: false,
   showCopiedMessage: false,
   importCredential: ''
@@ -159,7 +165,7 @@ class Home extends Component<{}, HomeState> {
 
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, displayName, userId, rpId, attestation, storedCredentials, excludeCredentials } = this.state;
+    const { username, displayName, userId, rpId, residentKey, regUserVerification, authenticatorAttachment, attestation, storedCredentials, excludeCredentials } = this.state;
 
     try {
       this.log('Start register...');
@@ -171,7 +177,17 @@ class Home extends Component<{}, HomeState> {
       }
 
       // initialize register to get creation options
-      const publicKey = reg.initRegistration(rpId, userId, username, displayName, attestation as AttestationConveyancePreference, excludeCredentials);
+      const publicKey = reg.initRegistration(
+        rpId,
+        userId,
+        username,
+        displayName,
+        residentKey as ResidentKeyRequirement,
+        regUserVerification as UserVerificationRequirement,
+        authenticatorAttachment as AuthenticatorAttachment,
+        attestation as AttestationConveyancePreference,
+        excludeCredentials
+      );
       const createCredentialOptions: CredentialCreationOptions = { publicKey: publicKey }
 
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
@@ -191,7 +207,7 @@ class Home extends Component<{}, HomeState> {
 
   handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, storedCredentials, allowCredentials, userVerification } = this.state;
+    const { username, storedCredentials, allowCredentials, authnUserVerification } = this.state;
 
     try {
       this.log('Start login...');
@@ -203,7 +219,7 @@ class Home extends Component<{}, HomeState> {
       }
 
       // initialize authentication for get options
-      const publicKey = authn.initAuthentication(allowCredentials, userVerification as UserVerificationRequirement);
+      const publicKey = authn.initAuthentication(allowCredentials, authnUserVerification as UserVerificationRequirement);
       const getCredentialOptions: CredentialRequestOptions = { publicKey: publicKey };
 
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
@@ -226,7 +242,7 @@ class Home extends Component<{}, HomeState> {
   };
 
   handleAutofill = async (e: SyntheticEvent<HTMLInputElement>) => {
-    const { allowCredentials, userVerification } = this.state;
+    const { allowCredentials, authnUserVerification } = this.state;
 
     try {
       if (this.autofillPending) {
@@ -236,7 +252,7 @@ class Home extends Component<{}, HomeState> {
       this.log('Start autofill login...');
 
       // initialize authentication for get options
-      const publicKey = authn.initAuthentication(allowCredentials, userVerification as UserVerificationRequirement);
+      const publicKey = authn.initAuthentication(allowCredentials, authnUserVerification as UserVerificationRequirement);
       this.autofillAbortController = new AbortController();
       const getCredentialOptions: CredentialRequestOptions = {
         publicKey: publicKey,
@@ -360,7 +376,7 @@ class Home extends Component<{}, HomeState> {
   }
 
   renderLogin() {
-    const { username, userVerification, storedCredentials } = this.state;
+    const { username, authnUserVerification, storedCredentials } = this.state;
     return (
       <div>
         <h1>Login</h1>
@@ -387,8 +403,8 @@ class Home extends Component<{}, HomeState> {
           </div>
           <div>
             <label> UserVerification: </label>
-            <select value={userVerification} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-              this.setState({ userVerification: e.target.value })
+            <select value={authnUserVerification} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              this.setState({ authnUserVerification: e.target.value })
             }}>
               <option key='discouraged' value='discouraged'>discouraged</option>
               <option key='preferred' value='preferred'>preferred</option>
@@ -404,7 +420,7 @@ class Home extends Component<{}, HomeState> {
   }
 
   renderRegister() {
-    const { userId, displayName, rpId, attestation } = this.state;
+    const { userId, displayName, rpId, residentKey, regUserVerification, authenticatorAttachment, attestation } = this.state;
     return (
       <div>
         <h1>Register</h1>
@@ -462,6 +478,35 @@ class Home extends Component<{}, HomeState> {
               e.preventDefault();
               this.setState({ rpId: await navigator.clipboard.readText() });
             }}>Paste</button>
+          </div>
+          <div>
+            <label> ResidentKey: </label>
+            <select value={residentKey} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              this.setState({ residentKey: e.target.value })
+            }}>
+              <option key='discouraged' value='discouraged'>discouraged</option>
+              <option key='preferred' value='preferred'>preferred</option>
+              <option key='required' value='required'>required</option>
+            </select>
+          </div>
+          <div>
+            <label> UserVerification: </label>
+            <select value={regUserVerification} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              this.setState({ regUserVerification: e.target.value })
+            }}>
+              <option key='discouraged' value='discouraged'>discouraged</option>
+              <option key='preferred' value='preferred'>preferred</option>
+              <option key='required' value='required'>required</option>
+            </select>
+          </div>
+          <div>
+            <label> AuthenticatorAttachment: </label>
+            <select value={authenticatorAttachment} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              this.setState({ authenticatorAttachment: e.target.value })
+            }}>
+              <option key='platform' value='platform'>platform</option>
+              <option key='cross-platform' value='cross-platform'>cross-platform</option>
+            </select>
           </div>
           <div>
             <label> Attestation: </label>

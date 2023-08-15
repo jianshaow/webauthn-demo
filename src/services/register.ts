@@ -13,6 +13,9 @@ export function initRegistration(
   userId: string,
   username: string,
   displayName: string,
+  residentKey: ResidentKeyRequirement,
+  userVerification: UserVerificationRequirement,
+  authenticatorAttachment: AuthenticatorAttachment,
   attestation: AttestationConveyancePreference,
   excludeCredentials: PublicKeyCredentialDescriptor[]
 ): PublicKeyCredentialCreationOptions {
@@ -34,8 +37,9 @@ export function initRegistration(
       { type: 'public-key', alg: -257 }, { type: 'public-key', alg: -7 }
     ],
     authenticatorSelection: {
-      authenticatorAttachment: 'platform',
-      userVerification: 'preferred',
+      authenticatorAttachment: authenticatorAttachment,
+      residentKey: residentKey,
+      userVerification: userVerification,
     },
     attestation: attestation,
   };
@@ -74,10 +78,11 @@ export function finishRegistration(
 
   handleClientData(clientDataJSON, rpId, userId);
 
-  const attestationObj = cbor.decode(new Uint8Array(attestationObject));
-  console.info('attestation=%o', attestationObj);
+  const decodedAttestationObject = cbor.decode(new Uint8Array(attestationObject));
+  console.info('attestationObject=%o', decodedAttestationObject);
 
-  const { fmt, attStmt, authData } = attestationObj;
+  const { fmt, attStmt, authData } = decodedAttestationObject;
+  getLogger().log('attestationObject.fmt=' + fmt);
 
   handleAttStmt(fmt, attStmt);
 
@@ -179,7 +184,7 @@ function handleClientData(clientDataJSON: ArrayBuffer, rpId: string, userId: str
 }
 
 function handleAttStmt(fmt: string, attStmt: any) {
-  getLogger().log('attestationObject.fmt=' + fmt);
+  // getLogger().log('attStmt=' + JSON.stringify(attStmt));
   if (fmt === 'tpm') {
     getLogger().log('attStmt.ver=' + attStmt.ver);
     getLogger().log('attStmt.alg=' + attStmt.alg);
