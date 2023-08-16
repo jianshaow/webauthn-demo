@@ -8,7 +8,7 @@ import { getCredentials, deleteCredential, saveCredential, getCredential } from 
 import './Home.css';
 
 interface HomeState {
-  log: string;
+  logs: string;
   loggedIn: boolean;
   userId: string;
   username: string;
@@ -60,9 +60,9 @@ class Home extends Component<{}, HomeState> {
     super(props);
     const storedCredentials = getCredentials();
     if (storedCredentials.length) {
-      this.state = { ...defaultState, storedCredentials: getCredentials(), log: '' };
+      this.state = { ...defaultState, storedCredentials: getCredentials(), logs: '' };
     } else {
-      this.state = { ...defaultState, ...defaultUser, storedCredentials: getCredentials(), log: '' };
+      this.state = { ...defaultState, ...defaultUser, storedCredentials: getCredentials(), logs: '' };
     }
     setLogger(this);
   }
@@ -75,7 +75,7 @@ class Home extends Component<{}, HomeState> {
     const milliseconds = now.getMilliseconds().toString().padStart(3, '0');
     const timestamp = `${hours}:${minutes}:${seconds}.${milliseconds}`;
     const logEntry = `[${timestamp}] ${message}`;
-    this.setState(prevState => ({ log: prevState.log + logEntry + '\n' }));
+    this.setState(prevState => ({ logs: prevState.logs + logEntry + '\n' }));
   }
 
   isAllowCredentialSelected(credentialId: string) {
@@ -527,19 +527,19 @@ class Home extends Component<{}, HomeState> {
     );
   }
 
-  renderLog() {
-    const { log } = this.state;
+  renderLogViewer() {
+    const { logs } = this.state;
     return (
       <div className="center">
-        <LogViewer log={log} />
+        <LogViewer log={logs} />
         <div>
           <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
             e.preventDefault();
-            this.setState({ log: '' });
+            this.setState({ logs: '' });
           }}>Clear</button>
           <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
             e.preventDefault();
-            navigator.clipboard.writeText(log);
+            navigator.clipboard.writeText(logs);
           }}>Copy</button>
         </div>
       </div>
@@ -563,7 +563,7 @@ class Home extends Component<{}, HomeState> {
           }
         </div>
         <div className="divider" />
-        {this.renderLog()}
+        {this.renderLogViewer()}
       </div>
     );
   }
