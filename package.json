@@ -1,6 +1,6 @@
 {
   "name": "webauthn-demo",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": true,
   "dependencies": {
     "@peculiar/asn1-ecc": "^2.3.6",
