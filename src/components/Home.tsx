@@ -24,6 +24,7 @@ interface HomeState {
   authenticatorAttachment: string;
   showImport: boolean;
   showCopiedMessage: boolean;
+  copiedCredentialId: string;
   importCredential: string;
 }
 
@@ -48,6 +49,7 @@ const defaultState = {
   authenticatorAttachment: 'platform',
   showImport: false,
   showCopiedMessage: false,
+  copiedCredentialId: '',
   importCredential: ''
 }
 
@@ -119,9 +121,9 @@ class Home extends Component<{}, HomeState> {
     const credentialId = (e.target as HTMLButtonElement).id.split('.')[1];
     const credential = getCredential(credentialId);
     navigator.clipboard.writeText(JSON.stringify(credential));
-    this.setState({ showCopiedMessage: true });
+    this.setState({ showCopiedMessage: true, copiedCredentialId: credentialId });
     setTimeout(() => {
-      this.setState({ showCopiedMessage: false });
+      this.setState({ showCopiedMessage: false, copiedCredentialId: '' });
     }, 2000);
   };
 
@@ -300,7 +302,7 @@ class Home extends Component<{}, HomeState> {
   }
 
   renderStoredCredentials() {
-    const { storedCredentials, importCredential, showImport, showCopiedMessage } = this.state;
+    const { storedCredentials, importCredential, showImport, showCopiedMessage, copiedCredentialId } = this.state;
     const hints = 'can be copied from stored credential via click copy button';
     return (
       <div>
@@ -364,7 +366,7 @@ class Home extends Component<{}, HomeState> {
                   <td>
                     <button id={'del.' + credential.id} onClick={this.deleteCredential}>Delete</button>
                     <button id={'cpy.' + credential.id} onClick={this.copyCredential}>Copy</button>
-                    {showCopiedMessage && 'Copied'}
+                    {showCopiedMessage && copiedCredentialId === credential.id && 'Copied'}
                   </td>
                 </tr>
               ))}
