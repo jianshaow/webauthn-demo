@@ -42,7 +42,7 @@ const defaultState = {
   authnUserVerification: 'preferred',
   excludeCredentials: [],
   allowCredentials: [],
-  rpId: window.location.host.split(':')[0],
+  rpId: window.location.hostname,
   attestation: 'direct',
   residentKey: 'preferred',
   regUserVerification: 'preferred',
@@ -102,7 +102,7 @@ class Home extends Component<{}, HomeState> {
       return;
     }
     const newCredentials = saveCredential(JSON.parse(importCredential));
-    this.setState({ showImport: false, storedCredentials: newCredentials, importCredential: '' });
+    this.setState({ ...defaultState, storedCredentials: newCredentials });
   };
 
   deleteCredential = (e: MouseEvent<HTMLButtonElement>) => {
