@@ -50,7 +50,7 @@ const defaultState = {
   showImport: false,
   showCopiedMessage: false,
   copiedCredentialId: '',
-  importCredential: ''
+  importCredential: '',
 }
 
 class Home extends Component<{}, HomeState> {
@@ -243,7 +243,8 @@ class Home extends Component<{}, HomeState> {
     }
   };
 
-  handleAutofill = async (e: SyntheticEvent<HTMLInputElement>) => {
+  handleAutofill = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     const { allowCredentials, authnUserVerification } = this.state;
 
     try {
@@ -392,7 +393,6 @@ class Home extends Component<{}, HomeState> {
               }}
               style={{ width: '180px' }}
               autoComplete='username webauthn'
-              onSelect={this.handleAutofill}
             />
             <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
               e.preventDefault();
@@ -415,6 +415,7 @@ class Home extends Component<{}, HomeState> {
           </div>
           <div>
             <button type="submit" disabled={!storedCredentials.length}>Passkey Login</button>
+            <button disabled={!storedCredentials.length} onClick={this.handleAutofill}>Passkey Autofill</button>
           </div>
         </form>
       </div>
