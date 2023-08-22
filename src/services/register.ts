@@ -1,4 +1,9 @@
-import * as cbor from 'cbor-x';
+// import * as cbor from 'cbor-x';
+import {
+  decodeAttestationObject,
+  AttestationFormat,
+  AttestationStatement,
+} from '@simplewebauthn/server/helpers';
 import * as utils from '../helpers/utils';
 import * as helper from '../helpers/authData';
 import * as cred from '../services/credential';
@@ -78,15 +83,15 @@ export function finishRegistration(
 
   handleClientData(clientDataJSON, rpId, userId);
 
-  const decodedAttestationObject = cbor.decode(new Uint8Array(attestationObject));
+  // const decodedAttestationObject = cbor.decode(new Uint8Array(attestationObject));
+  const decodedAttestationObject = decodeAttestationObject(new Uint8Array(attestationObject));
   console.info('attestationObject=%o', decodedAttestationObject);
 
-  const { fmt, attStmt, authData } = decodedAttestationObject;
-  getLogger().log('attestationObject.fmt=' + fmt);
+  // const { fmt, attStmt, authData } = decodedAttestationObject;
 
-  handleAttStmt(fmt, attStmt);
+  handleAttStmt(decodedAttestationObject.get('fmt'), decodedAttestationObject.get('attStmt'));
 
-  const { publicKeyJwk, coseKeyAlg } = handleAuthData(authData);
+  const { publicKeyJwk, coseKeyAlg } = handleAuthData(decodedAttestationObject.get('authData'));
 
   const credentialToBeStored: CredentialEntity = {
     id: credential.id,
@@ -183,11 +188,12 @@ function handleClientData(clientDataJSON: ArrayBuffer, rpId: string, userId: str
   return clientDataObj;
 }
 
-function handleAttStmt(fmt: string, attStmt: any) {
-  // getLogger().log('attStmt=' + JSON.stringify(attStmt));
+function handleAttStmt(fmt: AttestationFormat, attStmt: AttestationStatement) {
+  getLogger().log('attestationObject.fmt=' + fmt);
+  getLogger().log('attStmt.size=' + attStmt.size);
   if (fmt === 'tpm') {
-    getLogger().log('attStmt.ver=' + attStmt.ver);
-    getLogger().log('attStmt.alg=' + attStmt.alg);
+    getLogger().log('attStmt.ver=' + attStmt.get('ver'));
+    getLogger().log('attStmt.alg=' + attStmt.get('alg'));
   }
   else if (fmt === 'apple') {
     // TODO
