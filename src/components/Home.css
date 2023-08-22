@@ -3,7 +3,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: top;
-  height: 120vh;
+  margin: 20px 0;
 }
 
 .center {
