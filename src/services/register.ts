@@ -76,12 +76,14 @@ export function finishRegistration(
     getLogger().log('attestation.transports=' + transports);
   }
 
-  const pubclicKey = attestationResponse.getPublicKey();
-
-  if (!pubclicKey) {
-    throw new Error('no public key');
+  let publicKeyDer = '';
+  if (attestationResponse.getPublicKey) {
+    const pubclicKey = attestationResponse.getPublicKey();
+    if (!pubclicKey) {
+      throw new Error('no public key');
+    }
+    publicKeyDer = utils.bufferToBase64URLString(pubclicKey);
   }
-  const publicKeyDer = utils.bufferToBase64URLString(pubclicKey);
 
   const { clientDataJSON, attestationObject } = attestationResponse;
   getLogger().log('clientDataJSONBase64=' + utils.bufferToBase64URLString(clientDataJSON));
@@ -94,7 +96,6 @@ export function finishRegistration(
   console.info('attestationObject=%o', decodedAttestationObject);
 
   // const { fmt, attStmt, authData } = decodedAttestationObject;
-
   handleAttStmt(decodedAttestationObject.get('fmt'), decodedAttestationObject.get('attStmt'));
 
   const { publicKeyJwk, coseKeyAlg } = handleAuthData(decodedAttestationObject.get('authData'));
