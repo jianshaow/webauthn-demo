@@ -5,6 +5,7 @@
   "dependencies": {
     "@peculiar/asn1-ecc": "^2.3.6",
     "@peculiar/asn1-schema": "^2.3.6",
+    "@simplewebauthn/browser": "^8.0.0",
     "@simplewebauthn/server": "^8.0.0-alpha.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",

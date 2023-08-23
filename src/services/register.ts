@@ -1,6 +1,9 @@
 // import * as cbor from 'cbor-x';
 import {
+  convertAAGUIDToString,
   decodeAttestationObject,
+  convertCertBufferToPEM,
+  getCertificateInfo,
   AttestationFormat,
   AttestationStatement,
 } from '@simplewebauthn/server/helpers';
@@ -116,7 +119,9 @@ function handleAuthData(authData: Uint8Array): { publicKeyJwk: any, coseKeyAlg: 
   console.info('parsedAuthData=%o', parsedAuthData);
 
   const { aaguid, counter, flags, credentialPublicKey } = parsedAuthData;
-  getLogger().log('authData.aaguid=' + aaguid);
+  if (aaguid) {
+    getLogger().log('authData.aaguid=' + convertAAGUIDToString(aaguid));
+  }
   getLogger().log('authData.counter=' + counter);
   getLogger().log('authData.flags=' + JSON.stringify(flags));
 
@@ -193,9 +198,19 @@ function handleAttStmt(fmt: AttestationFormat, attStmt: AttestationStatement) {
   getLogger().log('attStmt.size=' + attStmt.size);
   if (fmt === 'tpm') {
     getLogger().log('attStmt.ver=' + attStmt.get('ver'));
-    getLogger().log('attStmt.alg=' + attStmt.get('alg'));
   }
   else if (fmt === 'apple') {
     // TODO
+  }
+  getLogger().log('attStmt.alg=' + attStmt.get('alg'));
+  // getLogger().log('attStmt.sigBase64=' + utils.bufferToBase64URLString(attStmt.get('sig')?.buffer as ArrayBuffer));
+  const certs = attStmt.get('x5c');
+  if (certs) {
+    getLogger().log('attStmt.x5c.size=' + certs.length);
+    certs.forEach(item => {
+      const { parsedCertificate, ...certInfo } = getCertificateInfo(item);
+      getLogger().log('certInfo=' + JSON.stringify(certInfo));
+      getLogger().log(convertCertBufferToPEM(item));
+    });
   }
 }
