@@ -67,11 +67,14 @@ export function finishRegistration(
   getLogger().log('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
 
   const attestationResponse = credential.response as AuthenticatorAttestationResponse;
-  const transports = attestationResponse.getTransports() as AuthenticatorTransport[];
   const publicKeyAlgorithm = attestationResponse.getPublicKeyAlgorithm();
-
   getLogger().log('attestation.publicKeyAlgorithm=' + publicKeyAlgorithm);
-  getLogger().log('attestation.transports=' + transports);
+
+  let transports: AuthenticatorTransport[] = [];
+  if (attestationResponse.getTransports) {
+    transports = attestationResponse.getTransports() as AuthenticatorTransport[];
+    getLogger().log('attestation.transports=' + transports);
+  }
 
   const pubclicKey = attestationResponse.getPublicKey();
 
