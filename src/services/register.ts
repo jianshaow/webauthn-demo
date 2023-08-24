@@ -21,6 +21,7 @@ export function initRegistration(
   userId: string,
   username: string,
   displayName: string,
+  requireResidentKey: boolean,
   residentKey: ResidentKeyRequirement,
   userVerification: UserVerificationRequirement,
   authenticatorAttachment: AuthenticatorAttachment,
@@ -46,6 +47,7 @@ export function initRegistration(
     ],
     authenticatorSelection: {
       authenticatorAttachment: authenticatorAttachment,
+      requireResidentKey: requireResidentKey,
       residentKey: residentKey,
       userVerification: userVerification,
     },

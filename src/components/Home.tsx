@@ -18,6 +18,7 @@ interface HomeState {
   allowCredentials: PublicKeyCredentialDescriptor[];
   storedCredentials: CredentialEntity[];
   rpId: string;
+  requireResidentKey: boolean;
   residentKey: string;
   attestation: string;
   regUserVerification: string;
@@ -44,6 +45,7 @@ const defaultState = {
   allowCredentials: [],
   rpId: window.location.hostname,
   attestation: 'direct',
+  requireResidentKey: false,
   residentKey: 'preferred',
   regUserVerification: 'preferred',
   authenticatorAttachment: 'platform',
@@ -167,7 +169,7 @@ class Home extends Component<{}, HomeState> {
 
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, displayName, userId, rpId, residentKey, regUserVerification, authenticatorAttachment, attestation, storedCredentials, excludeCredentials } = this.state;
+    const { username, displayName, userId, rpId, requireResidentKey, residentKey, regUserVerification, authenticatorAttachment, attestation, storedCredentials, excludeCredentials } = this.state;
 
     try {
       this.log('Start register...');
@@ -184,6 +186,7 @@ class Home extends Component<{}, HomeState> {
         userId,
         username,
         displayName,
+        requireResidentKey,
         residentKey as ResidentKeyRequirement,
         regUserVerification as UserVerificationRequirement,
         authenticatorAttachment as AuthenticatorAttachment,
@@ -423,7 +426,7 @@ class Home extends Component<{}, HomeState> {
   }
 
   renderRegister() {
-    const { userId, displayName, rpId, residentKey, regUserVerification, authenticatorAttachment, attestation } = this.state;
+    const { userId, displayName, rpId, requireResidentKey, residentKey, regUserVerification, authenticatorAttachment, attestation } = this.state;
     return (
       <div>
         <h1>Register</h1>
@@ -481,6 +484,15 @@ class Home extends Component<{}, HomeState> {
               e.preventDefault();
               this.setState({ rpId: await navigator.clipboard.readText() });
             }}>Paste</button>
+          </div>
+          <div>
+            <label> RequireResidentKey: </label>
+            <input type="checkbox"
+              checked={requireResidentKey}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                this.setState({ requireResidentKey: e.target.checked });
+              }}
+            />
           </div>
           <div>
             <label> ResidentKey: </label>
