@@ -208,15 +208,18 @@ function handleAttStmt(fmt: AttestationFormat, attStmt: AttestationStatement) {
   else if (fmt === 'apple') {
     // TODO
   }
-  getLogger().log('attStmt.alg=' + attStmt.get('alg'));
-  // getLogger().log('attStmt.sigBase64=' + utils.bufferToBase64URLString(attStmt.get('sig')?.buffer as ArrayBuffer));
-  const certs = attStmt.get('x5c');
-  if (certs) {
-    getLogger().log('attStmt.x5c.size=' + certs.length);
-    certs.forEach(item => {
-      const { parsedCertificate, ...certInfo } = getCertificateInfo(item);
-      getLogger().log('certInfo=' + JSON.stringify(certInfo));
-      getLogger().log(convertCertBufferToPEM(item));
-    });
+
+  if (fmt !== 'none') {
+    getLogger().log('attStmt.alg=' + attStmt.get('alg'));
+
+    const certs = attStmt.get('x5c');
+    if (certs) {
+      getLogger().log('attStmt.x5c.size=' + certs.length);
+      certs.forEach(item => {
+        const { parsedCertificate, ...certInfo } = getCertificateInfo(item);
+        getLogger().log('certInfo=' + JSON.stringify(certInfo));
+        getLogger().log(convertCertBufferToPEM(item));
+      });
+    }
   }
 }
