@@ -215,7 +215,7 @@ class Home extends Component<{}, HomeState> {
 
   handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, storedCredentials, authRpId, allowCredentials, authnUserVerification } = this.state;
+    const { authRpId, allowCredentials, authnUserVerification } = this.state;
 
     try {
       this.log('Start login...');
