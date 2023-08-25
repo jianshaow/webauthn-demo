@@ -197,6 +197,7 @@ class Home extends Component<{}, HomeState> {
       );
       const createCredentialOptions: CredentialCreationOptions = { publicKey: publicKey }
 
+      this.log('createCredentialOptions=' + JSON.stringify(createCredentialOptions));
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
 
       // finish register to save credential
@@ -218,8 +219,6 @@ class Home extends Component<{}, HomeState> {
 
     try {
       this.log('Start login...');
-      this.log('username=' + username);
-      this.log('storedCredentials.length=' + storedCredentials.length);
 
       if (this.autofillPending && this.autofillAbortController) {
         this.autofillAbortController.abort('explicit.login');
@@ -229,6 +228,7 @@ class Home extends Component<{}, HomeState> {
       const publicKey = authn.initAuthentication(allowCredentials, authRpId, authnUserVerification as UserVerificationRequirement);
       const getCredentialOptions: CredentialRequestOptions = { publicKey: publicKey };
 
+      this.log('getCredentialOptions=' + JSON.stringify(getCredentialOptions));
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
 
       // finish authentication for a credential
@@ -269,6 +269,7 @@ class Home extends Component<{}, HomeState> {
       };
 
       this.autofillPending = true;
+      this.log('getCredentialOptions=' + JSON.stringify(getCredentialOptions));
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
 
       // finish authentication for a credential
