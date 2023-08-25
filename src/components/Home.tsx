@@ -410,17 +410,12 @@ class Home extends Component<{}, HomeState> {
           </div>
           <div>
             <label>RPId: </label>
-            <input type="text" value={authRpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              this.setState({ authRpId: e.target.value });
-            }} />
-            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-              e.preventDefault();
-              this.setState({ authRpId: defaultState.authRpId });
-            }}>Reset</button>
-            <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
-              e.preventDefault();
-              this.setState({ authRpId: await navigator.clipboard.readText() });
-            }}>Paste</button>
+            <select value={authRpId} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              this.setState({ authRpId: e.target.value })
+            }}>{utils.splitDomain(window.location.hostname).map((domain) => (
+              <option key={domain} value={domain}>{domain}</option>
+            ))}
+            </select>
           </div>
           <div>
             <label> UserVerification: </label>
@@ -489,17 +484,12 @@ class Home extends Component<{}, HomeState> {
           </div>
           <div>
             <label>RPId: </label>
-            <input type="text" value={regRpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              this.setState({ regRpId: e.target.value });
-            }} />
-            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
-              e.preventDefault();
-              this.setState({ regRpId: defaultState.regRpId });
-            }}>Reset</button>
-            <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
-              e.preventDefault();
-              this.setState({ regRpId: await navigator.clipboard.readText() });
-            }}>Paste</button>
+            <select value={regRpId} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              this.setState({ regRpId: e.target.value })
+            }}>{utils.splitDomain(window.location.hostname).map((domain) => (
+              <option key={domain} value={domain}>{domain}</option>
+            ))}
+            </select>
           </div>
           <div>
             <label> RequireResidentKey: </label>

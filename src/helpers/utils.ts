@@ -78,6 +78,18 @@ export function unwrapEC2Signature(signature: Uint8Array): Uint8Array {
   return finalSignature;
 }
 
+export function splitDomain(domain: string): string[] {
+  const parts = domain.split('.');
+  const result: string[] = [];
+
+  for (let i = 0; i < parts.length - 1; i++) {
+    const subDomain = parts.slice(i).join('.');
+    result.push(subDomain);
+  }
+
+  return result;
+}
+
 function shouldRemoveLeadingZero(bytes: Uint8Array): boolean {
   return bytes[0] === 0x0 && (bytes[1] & (1 << 7)) !== 0;
 }
