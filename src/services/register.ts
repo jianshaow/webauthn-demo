@@ -1,15 +1,17 @@
 import {
+  cose,
+  isoCBOR,
   convertAAGUIDToString,
+  decodeClientDataJSON,
   decodeAttestationObject,
   convertCertBufferToPEM,
   getCertificateInfo,
+  parseAuthenticatorData,
   AttestationFormat,
   AttestationStatement,
 } from '@simplewebauthn/server/helpers';
 import * as utils from '../helpers/utils';
-import * as helper from '../helpers/authData';
 import * as cred from '../services/credential';
-import * as types from '../types/authData';
 import { getLogger } from '../services/common';
 import { CredentialEntity } from '../types/entities';
 
@@ -124,7 +126,7 @@ export function finishRegistration(
 }
 
 function handleAuthData(authData: Uint8Array): { publicKeyJwk: any, coseKeyAlg: number } {
-  const parsedAuthData = helper.parseAuthenticatorData(authData);
+  const parsedAuthData = parseAuthenticatorData(authData);
   console.info('parsedAuthData=%o', parsedAuthData);
 
   const { aaguid, counter, flags, credentialPublicKey } = parsedAuthData;
@@ -138,35 +140,35 @@ function handleAuthData(authData: Uint8Array): { publicKeyJwk: any, coseKeyAlg: 
     throw new Error('no public key');
   }
 
-  const publicKeyCose = helper.decodeFirst<types.COSEPublicKey>(credentialPublicKey);
+  const publicKeyCose = isoCBOR.decodeFirst<cose.COSEPublicKey>(credentialPublicKey);
   console.info('publicKeyCose=%o', publicKeyCose);
-  const coseKty = publicKeyCose.get(types.COSEKEYS.kty);
-  const coseKeyAlg = publicKeyCose.get(types.COSEKEYS.alg);
+  const coseKty = publicKeyCose.get(cose.COSEKEYS.kty);
+  const coseKeyAlg = publicKeyCose.get(cose.COSEKEYS.alg);
 
   if (!coseKty || !coseKeyAlg) {
     throw new Error('no COSE kty or COSE keyAlg');
   }
 
   let publicKeyJwk;
-  if (coseKty === types.COSEKTY.EC2) {
-    const ecPublicKeyCose = publicKeyCose as types.COSEPublicKeyEC2;
-    const coseCrv = ecPublicKeyCose.get(types.COSEKEYS.crv);
-    const coseX = ecPublicKeyCose.get(types.COSEKEYS.x);
-    const coseY = ecPublicKeyCose.get(types.COSEKEYS.y);
+  if (coseKty === cose.COSEKTY.EC2) {
+    const ecPublicKeyCose = publicKeyCose as cose.COSEPublicKeyEC2;
+    const coseCrv = ecPublicKeyCose.get(cose.COSEKEYS.crv);
+    const coseX = ecPublicKeyCose.get(cose.COSEKEYS.x);
+    const coseY = ecPublicKeyCose.get(cose.COSEKEYS.y);
 
     if (!coseCrv || !coseX || !coseY) {
       throw new Error('no ec key info');
     }
     publicKeyJwk = {
       kty: 'EC',
-      crv: helper.toCrvString(coseCrv),
+      crv: utils.toCrvString(coseCrv),
       x: utils.bufferToBase64URLString(coseX),
       y: utils.bufferToBase64URLString(coseY)
     };
-  } else if (coseKty === types.COSEKTY.RSA) {
-    const rsaPublicKeyCose = publicKeyCose as types.COSEPublicKeyRSA;
-    const coseN = rsaPublicKeyCose.get(types.COSEKEYS.n);
-    const coseE = rsaPublicKeyCose.get(types.COSEKEYS.e);
+  } else if (coseKty === cose.COSEKTY.RSA) {
+    const rsaPublicKeyCose = publicKeyCose as cose.COSEPublicKeyRSA;
+    const coseN = rsaPublicKeyCose.get(cose.COSEKEYS.n);
+    const coseE = rsaPublicKeyCose.get(cose.COSEKEYS.e);
     if (!coseN || !coseE) {
       throw new Error('no ec key info');
     }

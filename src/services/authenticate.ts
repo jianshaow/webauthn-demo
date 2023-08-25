@@ -1,5 +1,7 @@
+import {
+  parseAuthenticatorData,
+} from '@simplewebauthn/server/helpers';
 import * as utils from '../helpers/utils';
-import * as helper from '../helpers/authData';
 import * as cred from './credential';
 import { getLogger } from '../services/common';
 import { CredentialEntity } from '../types/entities';
@@ -92,7 +94,7 @@ function handleClientData(clientDataJSON: ArrayBuffer, userHandle: ArrayBuffer, 
 }
 
 function handleAuthData(authData: Uint8Array) {
-  const parsedAuthData = helper.parseAuthenticatorData(authData);
+  const parsedAuthData = parseAuthenticatorData(authData);
   console.info('parsedAuthData=%o', parsedAuthData);
 
   const { counter, flags } = parsedAuthData;

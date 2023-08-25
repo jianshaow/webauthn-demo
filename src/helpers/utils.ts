@@ -1,5 +1,6 @@
 import { ECDSASigValue } from '@peculiar/asn1-ecc';
 import { AsnParser } from '@peculiar/asn1-schema';
+import { cose } from '@simplewebauthn/server/helpers';
 
 export function bufferToUTF8String(value: ArrayBuffer): string {
   return new TextDecoder('utf-8').decode(value);
@@ -76,6 +77,18 @@ export function unwrapEC2Signature(signature: Uint8Array): Uint8Array {
   }
   const finalSignature = concat([rBytes, sBytes]);
   return finalSignature;
+}
+
+export function toCrvString(coseCrv: number) {
+  if (coseCrv === cose.COSECRV.P256) {
+    return 'P-256';
+  } else if (coseCrv === cose.COSECRV.P384) {
+    return 'P-384';
+  } else if (coseCrv === cose.COSECRV.P521) {
+    return 'P-521';
+  } else {
+    throw new Error(`Unexpected COSE crv value $(coseCrv)`);
+  }
 }
 
 export function splitDomain(domain: string): string[] {
