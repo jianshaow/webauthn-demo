@@ -1,4 +1,4 @@
-import React, { Component, ChangeEvent, FormEvent, MouseEvent, SyntheticEvent } from 'react';
+import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
 import * as utils from '../helpers/utils';
 import * as reg from '../services/register';
 import * as authn from '../services/authenticate';
