@@ -13,11 +13,12 @@ interface HomeState {
   userId: string;
   username: string;
   displayName: string;
+  authRpId: string;
   authnUserVerification: string;
   excludeCredentials: PublicKeyCredentialDescriptor[];
   allowCredentials: PublicKeyCredentialDescriptor[];
   storedCredentials: CredentialEntity[];
-  rpId: string;
+  regRpId: string;
   requireResidentKey: boolean;
   residentKey: string;
   attestation: string;
@@ -40,10 +41,11 @@ const defaultState = {
   userId: '',
   username: '',
   displayName: '',
+  authRpId: window.location.hostname,
   authnUserVerification: 'preferred',
   excludeCredentials: [],
   allowCredentials: [],
-  rpId: window.location.hostname,
+  regRpId: window.location.hostname,
   attestation: 'direct',
   requireResidentKey: false,
   residentKey: 'preferred',
@@ -169,7 +171,7 @@ class Home extends Component<{}, HomeState> {
 
   handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, displayName, userId, rpId, requireResidentKey, residentKey, regUserVerification, authenticatorAttachment, attestation, storedCredentials, excludeCredentials } = this.state;
+    const { username, displayName, userId, regRpId, requireResidentKey, residentKey, regUserVerification, authenticatorAttachment, attestation, storedCredentials, excludeCredentials } = this.state;
 
     try {
       this.log('Start register...');
@@ -182,7 +184,7 @@ class Home extends Component<{}, HomeState> {
 
       // initialize register to get creation options
       const publicKey = reg.initRegistration(
-        rpId,
+        regRpId,
         userId,
         username,
         displayName,
@@ -198,7 +200,7 @@ class Home extends Component<{}, HomeState> {
       const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
 
       // finish register to save credential
-      const credentialToBeStored = reg.finishRegistration(credential, rpId, userId, username, displayName);
+      const credentialToBeStored = reg.finishRegistration(credential, regRpId, userId, username, displayName);
       storedCredentials.push(credentialToBeStored);
 
       this.setState({ ...defaultState, storedCredentials: storedCredentials });
@@ -212,7 +214,7 @@ class Home extends Component<{}, HomeState> {
 
   handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    const { username, storedCredentials, allowCredentials, authnUserVerification } = this.state;
+    const { username, storedCredentials, authRpId, allowCredentials, authnUserVerification } = this.state;
 
     try {
       this.log('Start login...');
@@ -224,7 +226,7 @@ class Home extends Component<{}, HomeState> {
       }
 
       // initialize authentication for get options
-      const publicKey = authn.initAuthentication(allowCredentials, authnUserVerification as UserVerificationRequirement);
+      const publicKey = authn.initAuthentication(allowCredentials, authRpId, authnUserVerification as UserVerificationRequirement);
       const getCredentialOptions: CredentialRequestOptions = { publicKey: publicKey };
 
       const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
@@ -248,7 +250,7 @@ class Home extends Component<{}, HomeState> {
 
   handleAutofill = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const { allowCredentials, authnUserVerification } = this.state;
+    const { allowCredentials, authRpId, authnUserVerification } = this.state;
 
     try {
       if (this.autofillPending) {
@@ -258,7 +260,7 @@ class Home extends Component<{}, HomeState> {
       this.log('Start autofill login...');
 
       // initialize authentication for get options
-      const publicKey = authn.initAuthentication(allowCredentials, authnUserVerification as UserVerificationRequirement);
+      const publicKey = authn.initAuthentication(allowCredentials, authRpId, authnUserVerification as UserVerificationRequirement);
       this.autofillAbortController = new AbortController();
       const getCredentialOptions: CredentialRequestOptions = {
         publicKey: publicKey,
@@ -382,7 +384,7 @@ class Home extends Component<{}, HomeState> {
   }
 
   renderLogin() {
-    const { username, authnUserVerification, storedCredentials } = this.state;
+    const { username, authRpId, authnUserVerification, storedCredentials } = this.state;
     return (
       <div>
         <h1>Login</h1>
@@ -407,6 +409,20 @@ class Home extends Component<{}, HomeState> {
             }}>Paste</button>
           </div>
           <div>
+            <label>RPId: </label>
+            <input type="text" value={authRpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              this.setState({ authRpId: e.target.value });
+            }} />
+            <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ authRpId: defaultState.authRpId });
+            }}>Reset</button>
+            <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault();
+              this.setState({ authRpId: await navigator.clipboard.readText() });
+            }}>Paste</button>
+          </div>
+          <div>
             <label> UserVerification: </label>
             <select value={authnUserVerification} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
               this.setState({ authnUserVerification: e.target.value })
@@ -426,7 +442,7 @@ class Home extends Component<{}, HomeState> {
   }
 
   renderRegister() {
-    const { userId, displayName, rpId, requireResidentKey, residentKey, regUserVerification, authenticatorAttachment, attestation } = this.state;
+    const { userId, displayName, regRpId, requireResidentKey, residentKey, regUserVerification, authenticatorAttachment, attestation } = this.state;
     return (
       <div>
         <h1>Register</h1>
@@ -473,16 +489,16 @@ class Home extends Component<{}, HomeState> {
           </div>
           <div>
             <label>RPId: </label>
-            <input type="text" value={rpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              this.setState({ rpId: e.target.value });
+            <input type="text" value={regRpId} onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              this.setState({ regRpId: e.target.value });
             }} />
             <button onClick={(e: MouseEvent<HTMLButtonElement>) => {
               e.preventDefault();
-              this.setState({ rpId: defaultState.rpId });
+              this.setState({ regRpId: defaultState.regRpId });
             }}>Reset</button>
             <button onClick={async (e: MouseEvent<HTMLButtonElement>) => {
               e.preventDefault();
-              this.setState({ rpId: await navigator.clipboard.readText() });
+              this.setState({ regRpId: await navigator.clipboard.readText() });
             }}>Paste</button>
           </div>
           <div>

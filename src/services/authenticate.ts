@@ -6,13 +6,14 @@ import { CredentialEntity } from '../types/entities';
 
 const authnData: Map<string, PublicKeyCredentialRequestOptions> = new Map();
 
-export function initAuthentication(allowCredentials: PublicKeyCredentialDescriptor[], userVerification: UserVerificationRequirement): PublicKeyCredentialRequestOptions {
+export function initAuthentication(allowCredentials: PublicKeyCredentialDescriptor[], rpId: string, userVerification: UserVerificationRequirement): PublicKeyCredentialRequestOptions {
   const challenge = new Uint8Array(32);
   crypto.getRandomValues(challenge);
   const options: PublicKeyCredentialRequestOptions = {
     challenge: challenge,
     allowCredentials: allowCredentials,
     userVerification: userVerification,
+    rpId: rpId,
   };
   authnData.set(utils.bufferToBase64URLString(challenge), options);
   return options;
