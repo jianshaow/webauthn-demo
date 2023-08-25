@@ -31,6 +31,8 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
   }
 
   const { registeredCredential } = handleClientData(clientDataJSON, userHandle, credential.id);
+  const { publicKeyDer, publicKeyJwk, ...printableCredentialEntity } = registeredCredential;
+  getLogger().log('matchedCredentialEntity=' + JSON.stringify(printableCredentialEntity));
 
   handleAuthData(new Uint8Array(authenticatorData));
 

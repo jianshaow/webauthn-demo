@@ -1,4 +1,3 @@
-// import * as cbor from 'cbor-x';
 import {
   convertAAGUIDToString,
   decodeAttestationObject,
@@ -95,11 +94,9 @@ export function finishRegistration(
 
   handleClientData(clientDataJSON, rpId, userId);
 
-  // const decodedAttestationObject = cbor.decode(new Uint8Array(attestationObject));
   const decodedAttestationObject = decodeAttestationObject(new Uint8Array(attestationObject));
   console.info('attestationObject=%o', decodedAttestationObject);
 
-  // const { fmt, attStmt, authData } = decodedAttestationObject;
   handleAttStmt(decodedAttestationObject.get('fmt'), decodedAttestationObject.get('attStmt'));
 
   const { publicKeyJwk, coseKeyAlg } = handleAuthData(decodedAttestationObject.get('authData'));
@@ -114,10 +111,14 @@ export function finishRegistration(
     transports: transports,
     publicKeyDer: publicKeyDer,
     publicKeyJwk: publicKeyJwk,
-    publicKeyAlgorithm: coseKeyAlg as number,
+    publicKeyAlgorithm: coseKeyAlg,
   };
 
   cred.saveCredential(credentialToBeStored);
+  {
+    const { publicKeyDer, publicKeyJwk, ...printableCredentialEntity } = credentialToBeStored;
+    getLogger().log('savedCredentialEntity=' + JSON.stringify(printableCredentialEntity));
+  }
 
   return credentialToBeStored;
 }
