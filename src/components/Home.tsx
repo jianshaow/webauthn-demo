@@ -1,5 +1,5 @@
 import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
-import { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill } from '@simplewebauthn/browser';
+import { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, platformAuthenticatorIsAvailable } from '@simplewebauthn/browser';
 import * as utils from '../helpers/utils';
 import * as reg from '../services/register';
 import * as authn from '../services/authenticate';
@@ -179,6 +179,10 @@ class Home extends Component<{}, HomeState> {
         throw new Error('Browser does not supoort webauthn');
       }
 
+      if (!await platformAuthenticatorIsAvailable()) {
+        throw new Error('Platform authenticator is not available');
+      }
+
       this.log('Start register...');
       this.log('username=' + username);
       this.log('userId=' + userId);
@@ -227,6 +231,10 @@ class Home extends Component<{}, HomeState> {
         throw new Error('Browser does not supoort webauthn');
       }
 
+      if (!await platformAuthenticatorIsAvailable()) {
+        throw new Error('Platform authenticator is not available');
+      }
+
       this.log('Start login...');
 
       if (this.autofillPending && this.autofillAbortController) {
@@ -264,6 +272,10 @@ class Home extends Component<{}, HomeState> {
     try {
       if (!browserSupportsWebAuthn()) {
         throw new Error('Browser does not supoort webauthn');
+      }
+
+      if (!await platformAuthenticatorIsAvailable()) {
+        throw new Error('Platform authenticator is not available');
       }
 
       if (!browserSupportsWebAuthnAutofill()) {
