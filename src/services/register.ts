@@ -2,7 +2,6 @@ import {
   cose,
   isoCBOR,
   convertAAGUIDToString,
-  decodeClientDataJSON,
   decodeAttestationObject,
   convertCertBufferToPEM,
   getCertificateInfo,

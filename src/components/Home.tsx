@@ -1,4 +1,5 @@
 import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
+import { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill } from '@simplewebauthn/browser';
 import * as utils from '../helpers/utils';
 import * as reg from '../services/register';
 import * as authn from '../services/authenticate';
@@ -174,6 +175,10 @@ class Home extends Component<{}, HomeState> {
     const { username, displayName, userId, regRpId, requireResidentKey, residentKey, regUserVerification, authenticatorAttachment, attestation, storedCredentials, excludeCredentials } = this.state;
 
     try {
+      if (!browserSupportsWebAuthn()) {
+        throw new Error('Browser does not supoort webauthn');
+      }
+
       this.log('Start register...');
       this.log('username=' + username);
       this.log('userId=' + userId);
@@ -218,6 +223,10 @@ class Home extends Component<{}, HomeState> {
     const { authRpId, allowCredentials, authnUserVerification } = this.state;
 
     try {
+      if (!browserSupportsWebAuthn()) {
+        throw new Error('Browser does not supoort webauthn');
+      }
+
       this.log('Start login...');
 
       if (this.autofillPending && this.autofillAbortController) {
@@ -253,6 +262,14 @@ class Home extends Component<{}, HomeState> {
     const { allowCredentials, authRpId, authnUserVerification } = this.state;
 
     try {
+      if (!browserSupportsWebAuthn()) {
+        throw new Error('Browser does not supoort webauthn');
+      }
+
+      if (!browserSupportsWebAuthnAutofill()) {
+        throw new Error('Browser does not supoort webauthn autofill');
+      }
+
       if (this.autofillPending) {
         this.log('There is a autofill request on pending');
         return;
