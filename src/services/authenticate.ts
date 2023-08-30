@@ -97,9 +97,16 @@ function handleAuthData(authData: Uint8Array) {
   const parsedAuthData = parseAuthenticatorData(authData);
   console.info('parsedAuthData=%o', parsedAuthData);
 
-  const { counter, flags } = parsedAuthData;
+  const { counter, flags, extensionsData } = parsedAuthData;
   getLogger().log('authData.counter=' + counter);
   getLogger().log('authData.flags=' + JSON.stringify(flags));
+  if (extensionsData) {
+    handleAuthDataExtensions(extensionsData);
+  }
+}
+
+function handleAuthDataExtensions(extensionsData: any) {
+  getLogger().log('authData.extensionsData=' + JSON.stringify(extensionsData));
 }
 
 async function importPublicKey(registeredCredential: CredentialEntity): Promise<CryptoKey> {

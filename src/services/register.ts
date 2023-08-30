@@ -128,12 +128,15 @@ function handleAuthData(authData: Uint8Array): { publicKeyJwk: any, coseKeyAlg: 
   const parsedAuthData = parseAuthenticatorData(authData);
   console.info('parsedAuthData=%o', parsedAuthData);
 
-  const { aaguid, counter, flags, credentialPublicKey } = parsedAuthData;
+  const { aaguid, counter, flags, extensionsData, credentialPublicKey } = parsedAuthData;
   if (aaguid) {
     getLogger().log('authData.aaguid=' + convertAAGUIDToString(aaguid));
   }
   getLogger().log('authData.counter=' + counter);
   getLogger().log('authData.flags=' + JSON.stringify(flags));
+  if (extensionsData) {
+    handleAuthDataExtensions(extensionsData);
+  }
 
   if (!credentialPublicKey) {
     throw new Error('no public key');
@@ -179,6 +182,10 @@ function handleAuthData(authData: Uint8Array): { publicKeyJwk: any, coseKeyAlg: 
     };
   }
   return { publicKeyJwk, coseKeyAlg };
+}
+
+function handleAuthDataExtensions(extensionsData: any) {
+  getLogger().log('authData.extensionsData=' + JSON.stringify(extensionsData));
 }
 
 function handleClientData(clientDataJSON: ArrayBuffer, rpId: string, userId: string): any {
