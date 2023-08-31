@@ -555,6 +555,7 @@ class Home extends Component<{}, HomeState> {
             <select value={authenticatorAttachment} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
               this.setState({ authenticatorAttachment: e.target.value })
             }}>
+              <option key='none' value=''>none</option>
               <option key='platform' value='platform'>platform</option>
               <option key='cross-platform' value='cross-platform'>cross-platform</option>
             </select>
