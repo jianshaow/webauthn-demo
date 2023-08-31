@@ -179,7 +179,7 @@ class Home extends Component<{}, HomeState> {
         throw new Error('Browser does not supoort webauthn');
       }
 
-      if (!await platformAuthenticatorIsAvailable()) {
+      if (authenticatorAttachment === 'platform' && !await platformAuthenticatorIsAvailable()) {
         throw new Error('Platform authenticator is not available');
       }
 
@@ -229,10 +229,6 @@ class Home extends Component<{}, HomeState> {
     try {
       if (!browserSupportsWebAuthn()) {
         throw new Error('Browser does not supoort webauthn');
-      }
-
-      if (!await platformAuthenticatorIsAvailable()) {
-        throw new Error('Platform authenticator is not available');
       }
 
       this.log('Start login...');
