@@ -207,10 +207,10 @@ class Home extends Component<{}, HomeState> {
       const createCredentialOptions: CredentialCreationOptions = { publicKey: publicKey }
 
       this.log('createCredentialOptions=' + JSON.stringify(createCredentialOptions));
-      const credential = await navigator.credentials.create(createCredentialOptions) as PublicKeyCredential;
+      const credential = await navigator.credentials.create(createCredentialOptions);
 
       // finish register to save credential
-      const credentialToBeStored = reg.finishRegistration(credential, regRpId, userId, username, displayName);
+      const credentialToBeStored = reg.finishRegistration(credential as PublicKeyCredential, regRpId, userId, username, displayName);
       storedCredentials.push(credentialToBeStored);
 
       this.setState({ ...defaultState, storedCredentials: storedCredentials });
@@ -242,10 +242,10 @@ class Home extends Component<{}, HomeState> {
       const getCredentialOptions: CredentialRequestOptions = { publicKey: publicKey };
 
       this.log('getCredentialOptions=' + JSON.stringify(getCredentialOptions));
-      const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
+      const credential = await navigator.credentials.get(getCredentialOptions);
 
       // finish authentication for a credential
-      const registeredCredential = await authn.finishAuthentication(credential);
+      const registeredCredential = await authn.finishAuthentication(credential as PublicKeyCredential);
 
       this.setState({ loggedIn: true });
       this.log('Login success');
@@ -295,10 +295,10 @@ class Home extends Component<{}, HomeState> {
 
       this.autofillPending = true;
       this.log('getCredentialOptions=' + JSON.stringify(getCredentialOptions));
-      const credential = await navigator.credentials.get(getCredentialOptions) as PublicKeyCredential;
+      const credential = await navigator.credentials.get(getCredentialOptions);
 
       // finish authentication for a credential
-      const registeredCredential = await authn.finishAuthentication(credential);
+      const registeredCredential = await authn.finishAuthentication(credential as PublicKeyCredential);
 
       this.setState({ loggedIn: true });
       this.log('Login success');

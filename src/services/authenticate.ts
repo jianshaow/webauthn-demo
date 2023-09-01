@@ -31,6 +31,7 @@ export async function finishAuthentication(credential: PublicKeyCredential): Pro
   getLogger().log('credential.id=' + credential.id);
   getLogger().log('credential.type=' + credential.type);
   getLogger().log('credential.authenticatorAttachment=' + credential.authenticatorAttachment);
+  getLogger().log('credential.clientExtension=' + JSON.stringify(credential.getClientExtensionResults()));
 
   const { authenticatorData, signature, clientDataJSON, userHandle } = credential.response as AuthenticatorAssertionResponse;
 
