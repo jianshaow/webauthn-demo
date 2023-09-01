@@ -224,14 +224,17 @@ function handleAttStmt(fmt: AttestationFormat, attStmt: AttestationStatement) {
   getLogger().log('attStmt.size=' + attStmt.size);
   if (fmt === 'tpm') {
     getLogger().log('attStmt.ver=' + attStmt.get('ver'));
-  }
-  else if (fmt === 'apple') {
-    // TODO
-  }
-
-  if (fmt !== 'none') {
     getLogger().log('attStmt.alg=' + attStmt.get('alg'));
+  }
+  else if (fmt === 'android-key') {
+    getLogger().log('attStmt.alg=' + attStmt.get('alg'));
+  } else if (fmt === 'android-safetynet') {
+    getLogger().log('attStmt.ver=' + attStmt.get('ver'));
+    const response = utils.bufferToUTF8String(attStmt.get('response')?.buffer as ArrayBuffer);
+    getLogger().log('attStmt.response=' + response);
+  }
 
+  if (fmt !== 'none' && fmt !== 'android-safetynet') {
     const certs = attStmt.get('x5c');
     if (certs) {
       getLogger().log('attStmt.x5c.size=' + certs.length);
