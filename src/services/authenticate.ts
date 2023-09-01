@@ -18,7 +18,7 @@ export function initAuthentication(allowCredentials: PublicKeyCredentialDescript
     rpId: rpId,
     extensions: {
       devicePubKey: {
-        attestation: "none",
+        attestation: "direct",
         attestationFormats: [],
       }
     } as AuthenticationExtensionsClientInputs,

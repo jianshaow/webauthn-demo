@@ -54,7 +54,7 @@ export function initRegistration(
     attestation: attestation,
     extensions: {
       devicePubKey: {
-        attestation: "none",
+        attestation: "direct",
         attestationFormats: [],
       }
     } as AuthenticationExtensionsClientInputs,
