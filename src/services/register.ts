@@ -52,6 +52,12 @@ export function initRegistration(
       userVerification: userVerification,
     },
     attestation: attestation,
+    extensions: {
+      devicePubKey: {
+        attestation: "none",
+        attestationFormats: [],
+      }
+    } as AuthenticationExtensionsClientInputs,
   };
   registerData.set(utils.bufferToBase64URLString(challenge), options);
   return options;

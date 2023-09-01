@@ -16,6 +16,12 @@ export function initAuthentication(allowCredentials: PublicKeyCredentialDescript
     allowCredentials: allowCredentials,
     userVerification: userVerification,
     rpId: rpId,
+    extensions: {
+      devicePubKey: {
+        attestation: "none",
+        attestationFormats: [],
+      }
+    } as AuthenticationExtensionsClientInputs,
   };
   authnData.set(utils.bufferToBase64URLString(challenge), options);
   return options;
