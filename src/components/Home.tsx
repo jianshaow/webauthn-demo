@@ -208,6 +208,7 @@ class Home extends Component<{}, HomeState> {
 
       this.log('createCredentialOptions=' + JSON.stringify(createCredentialOptions));
       const credential = await navigator.credentials.create(createCredentialOptions);
+      console.info('credential=%o', credential);
 
       // finish register to save credential
       const credentialToBeStored = reg.finishRegistration(credential as PublicKeyCredential, regRpId, userId, username, displayName);
@@ -243,6 +244,7 @@ class Home extends Component<{}, HomeState> {
 
       this.log('getCredentialOptions=' + JSON.stringify(getCredentialOptions));
       const credential = await navigator.credentials.get(getCredentialOptions);
+      console.info('credential=%o', credential);
 
       // finish authentication for a credential
       const registeredCredential = await authn.finishAuthentication(credential as PublicKeyCredential);
@@ -296,6 +298,7 @@ class Home extends Component<{}, HomeState> {
       this.autofillPending = true;
       this.log('getCredentialOptions=' + JSON.stringify(getCredentialOptions));
       const credential = await navigator.credentials.get(getCredentialOptions);
+      console.info('credential=%o', credential);
 
       // finish authentication for a credential
       const registeredCredential = await authn.finishAuthentication(credential as PublicKeyCredential);

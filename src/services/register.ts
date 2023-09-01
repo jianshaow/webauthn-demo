@@ -53,6 +53,8 @@ export function initRegistration(
     },
     attestation: attestation,
     extensions: {
+      credProps: true,
+      minPinLength: true,
       devicePubKey: {
         attestation: "direct",
         attestationFormats: [],
