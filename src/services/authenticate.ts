@@ -94,7 +94,8 @@ function handleClientData(clientDataJSON: ArrayBuffer, userHandle: ArrayBuffer, 
   }
   const registeredCredential = filteredCredentials[0];
 
-  if (!origin.endsWith(registeredCredential.rpId)) {
+  const originUrl = new URL(origin);
+  if (!originUrl.hostname.endsWith(registeredCredential.rpId)) {
     throw new Error('rpId mismatch origin');
   }
 
