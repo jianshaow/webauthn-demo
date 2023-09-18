@@ -1,0 +1,21 @@
+.red-dot {
+  width: 15px;
+  height: 150px;
+  background-color: red;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.green-dot {
+  width: 15px;
+  height: 15px;
+  background-color: green;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.navbar {
+  display: flex;
+  justify-content: center;
+}

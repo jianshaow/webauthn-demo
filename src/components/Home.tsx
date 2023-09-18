@@ -1,4 +1,5 @@
 import React, { Component, ChangeEvent, FormEvent, MouseEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, platformAuthenticatorIsAvailable } from '@simplewebauthn/browser';
 import * as utils from '../helpers/utils';
 import * as reg from '../services/register';
@@ -6,6 +7,7 @@ import * as authn from '../services/authenticate';
 import { CredentialEntity } from '../types/entities';
 import { setLogger } from '../services/common';
 import { getCredentials, deleteCredential, saveCredential, getCredential } from '../services/credential';
+import './Common.css';
 import './Home.css';
 
 interface HomeState {
@@ -601,6 +603,7 @@ class Home extends Component<{}, HomeState> {
     const { loggedIn } = this.state;
     return (
       <div className="container">
+        <Link to="/info">Device Information</Link>
         <div className="center">
           {loggedIn ?
             this.renderLoggedIn()
