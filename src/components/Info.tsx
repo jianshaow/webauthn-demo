@@ -4,20 +4,28 @@ import { UAParser } from 'ua-parser-js';
 import './Common.css';
 import './Info.css';
 
-class Info extends Component<{}> {
+interface InfoState {
+  longitude: number;
+  latitude: number;
+}
+
+class Info extends Component<{}, InfoState> {
   constructor(props: {}) {
     super(props);
+    this.state = { longitude: 0, latitude: 0 };
   }
+
+  setPosition(position: GeolocationPosition) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    this.setState({ longitude: longitude, latitude: latitude });
+  };
 
   getLocationInfo() {
     let longitude = 0;
     let latitude = 0;
     if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(function (position) {
-        latitude = position.coords.latitude;
-        longitude = position.coords.longitude;
-        console.log(`longitude: ${longitude}, latitude: ${latitude}`);
-      }, function (error) {
+      navigator.geolocation.getCurrentPosition(this.setPosition, function (error) {
         switch (error.code) {
           case error.PERMISSION_DENIED:
             console.error("Permission denied");
@@ -49,7 +57,9 @@ class Info extends Component<{}> {
   }
 
   render() {
-    const { longitude, latitude } = this.getLocationInfo();
+    const { longitude, latitude } = this.state;
+
+    this.getLocationInfo();
     const { isOnline } = this.getNetworkInfo();
     const { device, browser, os, engine, cpu } = this.getBrowserInfo();
     return (
