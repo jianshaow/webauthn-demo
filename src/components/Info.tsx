@@ -5,43 +5,60 @@ import './Common.css';
 import './Info.css';
 
 interface InfoState {
-  longitude: number;
-  latitude: number;
+  position: string;
+  online: boolean;
+  browser: string;
+  os: string;
+  device: string;
+  engine: string;
+  cpu: string | undefined;
 }
 
 class Info extends Component<{}, InfoState> {
   constructor(props: {}) {
     super(props);
-    this.state = { longitude: 0, latitude: 0 };
+    const { isOnline } = this.getNetworkInfo();
+    const { device, browser, os, engine, cpu } = this.getBrowserInfo();
+    this.state = {
+      position: '(-/-)',
+      online: isOnline,
+      browser: browser.name + '/' + browser.version,
+      os: os.name + '/' + os.version,
+      device: device.type + '/' + device.vendor + '/' + device.model,
+      engine: engine.name + '/' + engine.version,
+      cpu: cpu.architecture
+    };
   }
 
-  setPosition(position: GeolocationPosition) {
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-    this.setState({ longitude: longitude, latitude: latitude });
-  };
-
-  getLocationInfo() {
-    let longitude = 0;
-    let latitude = 0;
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(this.setPosition, function (error) {
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            console.error("Permission denied");
-            break;
-          case error.POSITION_UNAVAILABLE:
-            console.error("Position unavailable");
-            break;
-          case error.TIMEOUT:
-            console.error("Timeout");
-            break;
-        }
-      });
+  getPositionInfo() {
+    if ('geolocation' in navigator) {
+      const component = this;
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          component.setState({ position: '(' + longitude + ', ' + latitude + ')' });
+        },
+        function (error) {
+          let msg = '';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              msg = 'Permission denied';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              msg = 'Position unavailable';
+              break;
+            case error.TIMEOUT:
+              msg = 'Timeout';
+              break;
+            default:
+              msg = 'unknown error';
+          }
+          alert('Get posistion fail: ' + msg);
+        });
     } else {
       console.error("Get position not suport");
     }
-    return { longitude, latitude };
   }
 
   getNetworkInfo() {
@@ -57,11 +74,8 @@ class Info extends Component<{}, InfoState> {
   }
 
   render() {
-    const { longitude, latitude } = this.state;
+    const { position, online, browser, os, device, engine, cpu } = this.state;
 
-    this.getLocationInfo();
-    const { isOnline } = this.getNetworkInfo();
-    const { device, browser, os, engine, cpu } = this.getBrowserInfo();
     return (
       <div className='container'>
         <div className='header'>
@@ -71,13 +85,16 @@ class Info extends Component<{}, InfoState> {
           <h1>Device Information</h1>
           <nav className='navbar'>
             <ul>
-              <li>Location: ({longitude}, {latitude})</li>
-              <li>Online: {isOnline ? <div className="green-dot"></div> : <div className="red-dot"></div>}</li>
-              <li>Browser: {browser.name}/{browser.version}</li>
-              <li>OS: {os.name}/{os.version}</li>
-              <li>Device: {device.type}/{device.model}/{device.vendor}</li>
-              <li>Engine: {engine.name}/{engine.version}</li>
-              <li>CPU: {cpu.architecture}</li>
+              <li>Location: {position}
+                <button onClick={() => {
+                  this.getPositionInfo();
+                }}>Get Location</button></li>
+              <li>Online: {online ? <div className="green-dot"></div> : <div className="red-dot"></div>}</li>
+              <li>Browser: {browser}</li>
+              <li>OS: {os}</li>
+              <li>Device: {device}</li>
+              <li>Engine: {engine}</li>
+              <li>CPU: {cpu}</li>
             </ul>
           </nav>
         </div>
