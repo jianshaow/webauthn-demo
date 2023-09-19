@@ -603,7 +603,9 @@ class Home extends Component<{}, HomeState> {
     const { loggedIn } = this.state;
     return (
       <div className="container">
-        <Link to="/info">Device Information</Link>
+        <div className='header'>
+          <Link to="/info">Device Information</Link>
+        </div>
         <div className="center">
           {loggedIn ?
             this.renderLoggedIn()
@@ -618,7 +620,7 @@ class Home extends Component<{}, HomeState> {
         </div>
         <div className="divider" />
         {this.renderLogViewer()}
-      </div>
+      </div >
     );
   }
 }

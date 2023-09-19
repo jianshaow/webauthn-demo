@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { Link } from 'react-router-dom';
+import { UAParser } from 'ua-parser-js';
 import './Common.css';
 import './Info.css';
 
@@ -40,18 +41,33 @@ class Info extends Component<{}> {
     return { isOnline };
   }
 
+  getBrowserInfo() {
+    const parser = new UAParser();
+    const result = parser.getResult();
+    console.info(result);
+    return result;
+  }
+
   render() {
     const { longitude, latitude } = this.getLocationInfo();
     const { isOnline } = this.getNetworkInfo();
+    const { device, browser, os, engine, cpu } = this.getBrowserInfo();
     return (
       <div className='container'>
-        <Link to="/">Return Home</Link>
+        <div className='header'>
+          <Link to="/">Return Home</Link>
+        </div>
         <div className="center">
           <h1>Device Information</h1>
           <nav className='navbar'>
             <ul>
               <li>Location: ({longitude}, {latitude})</li>
               <li>Online: {isOnline ? <div className="green-dot"></div> : <div className="red-dot"></div>}</li>
+              <li>Browser: {browser.name}/{browser.version}</li>
+              <li>OS: {os.name}/{os.version}</li>
+              <li>Device: {device.type}/{device.model}/{device.vendor}</li>
+              <li>Engine: {engine.name}/{engine.version}</li>
+              <li>CPU: {cpu.architecture}</li>
             </ul>
           </nav>
         </div>
