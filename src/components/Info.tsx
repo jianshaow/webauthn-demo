@@ -20,7 +20,7 @@ class Info extends Component<{}, InfoState> {
     const { isOnline } = this.getNetworkInfo();
     const { device, browser, os, engine, cpu } = this.getBrowserInfo();
     this.state = {
-      position: '(-/-)',
+      position: '-,-',
       online: isOnline,
       browser: browser.name + '/' + browser.version,
       os: os.name + '/' + os.version,
@@ -37,7 +37,7 @@ class Info extends Component<{}, InfoState> {
         function (position) {
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
-          component.setState({ position: '(' + longitude + ', ' + latitude + ')' });
+          component.setState({ position: latitude + ',' + longitude });
         },
         function (error) {
           let msg = '';
@@ -57,7 +57,7 @@ class Info extends Component<{}, InfoState> {
           alert('Get posistion fail: ' + msg);
         });
     } else {
-      console.error("Get position not suport");
+      console.error('Get position not suport');
     }
   }
 
@@ -79,17 +79,21 @@ class Info extends Component<{}, InfoState> {
     return (
       <div className='container'>
         <div className='header'>
-          <Link to="/">Return Home</Link>
+          <Link to='/'>Return Home</Link>
         </div>
-        <div className="center">
+        <div className='center'>
           <h1>Device Information</h1>
           <nav className='navbar'>
             <ul>
-              <li>Location: {position}
+              <li>Location: ({position})
                 <button onClick={() => {
                   this.getPositionInfo();
-                }}>Get Location</button></li>
-              <li>Online: {online ? <div className="green-dot"></div> : <div className="red-dot"></div>}</li>
+                }}>Get Location</button>
+                {position !== '-,-' ? (
+                  <Link to={'https://www.google.com/maps/place/' + position} target="_blank">Goto Google Map</Link>
+                ) : null}
+              </li>
+              <li>Online: {online ? <div className='green-dot' /> : <div className='red-dot' />}</li>
               <li>Browser: {browser}</li>
               <li>OS: {os}</li>
               <li>Device: {device}</li>
