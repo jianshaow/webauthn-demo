@@ -83,25 +83,24 @@ class Info extends Component<{}, InfoState> {
         </div>
         <div className='center'>
           <h1>Device Information</h1>
-          <nav className='navbar'>
-            <ul>
-              <li>Location: ({position})
-                <button onClick={() => {
-                  this.getPositionInfo();
-                }}>Get Location</button>
-                {position !== '-,-' ? (
-                  <Link to={'https://www.google.com/maps/place/' + position} target="_blank">Goto Google Map</Link>
-                ) : null}
-              </li>
-              <li>Online: {online ? <div className='green-dot' /> : <div className='red-dot' />}</li>
-              <li>Browser: {browser}</li>
-              <li>OS: {os}</li>
-              <li>Device: {device}</li>
-              <li>Engine: {engine}</li>
-              <li>CPU: {cpu}</li>
-            </ul>
-          </nav>
+          <ul className='block'>
+            <li>Location: ({position})
+              <button onClick={() => {
+                this.getPositionInfo();
+              }}>Get Location</button>
+              {position !== '-,-' ? (
+                <Link to={'https://www.google.com/maps/place/' + position} target="_blank">Goto Google Map</Link>
+              ) : null}
+            </li>
+            <li>Online: {online ? <div className='green-dot' /> : <div className='red-dot' />}</li>
+            <li>Browser: {browser}</li>
+            <li>OS: {os}</li>
+            <li>Device: {device}</li>
+            <li>Engine: {engine}</li>
+            <li>CPU: {cpu}</li>
+          </ul>
         </div>
+
       </div>
     );
   }

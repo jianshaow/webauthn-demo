@@ -14,13 +14,3 @@
   border-radius: 50%;
   display: inline-block;
 }
-
-.navbar {
-  display: flex;
-  justify-content: center;
-}
-
-.header {
-  width: 90%;
-  margin: 0 auto;
-}
