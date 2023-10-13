@@ -100,7 +100,6 @@ class Info extends Component<{}, InfoState> {
             <li>CPU: {cpu}</li>
           </ul>
         </div>
-
       </div>
     );
   }
