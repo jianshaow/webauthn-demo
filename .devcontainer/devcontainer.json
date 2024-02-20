@@ -1,0 +1,21 @@
+{
+	"name": "NODE-DEV",
+	"image": "jianshao/node-dev:lts-slim",
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {}
+	},
+	"remoteEnv": {
+		"PYTHONPATH": "."
+	},
+	"mounts": [
+		{"source": "${localEnv:HOME}/.ssh", "target": "/home/node/.ssh", "type": "bind"},
+		{"source": "${localEnv:HOME}/.npm", "target": "/home/node/.npm", "type": "bind"}
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"alphabotsec.vscode-eclipse-keybindings"
+			]
+		}
+	}
+}
