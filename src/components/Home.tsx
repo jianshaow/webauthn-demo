@@ -602,7 +602,7 @@ class Home extends Component<{}, HomeState> {
   render() {
     const { loggedIn } = this.state;
     return (
-      <div className="container">
+      <div className="main-frame">
         <div className='header'>
           <Link to="/info">Device Information</Link>
         </div>

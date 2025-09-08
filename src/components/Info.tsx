@@ -77,7 +77,7 @@ class Info extends Component<{}, InfoState> {
     const { position, online, browser, os, device, engine, cpu } = this.state;
 
     return (
-      <div className='container'>
+      <div className='main-frame'>
         <div className='header'>
           <Link to='/'>Return Home</Link>
         </div>

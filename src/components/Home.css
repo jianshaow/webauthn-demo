@@ -6,7 +6,7 @@
 
 table {
   border-collapse: collapse;
-  width: 90%;
+  width: 100%;
 }
 
 table th,
@@ -17,6 +17,6 @@ table td {
 }
 
 textarea {
-  width: 90%;
+  width: 100%;
   height: 200px;
 }
